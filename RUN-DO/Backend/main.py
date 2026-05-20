@@ -411,14 +411,3 @@ def get_rankings(db: Session = Depends(get_db)):
         })
         
     return {"status": "success", "data": ranking_list}
-
-
-# =====================================================================================================
-
-# python -m venv venv // 가상 환경 만드는 명령어
-# .\venv\Scripts\activate // venv가상 환경 활성화 명령어
-# deactivate // 비활성화 명령어
-# uvicorn main:app --reload // thunder client에서 실행할 때 사용할 명령어
-# Remove-Item -Recurse -Force .git // 깃허브에 올릴 내용 끝나고 기본 코드 폴더로 돌리고 싶을 때 사용할 명령어.
-
-# =====================================================================================================
