@@ -19,7 +19,8 @@ fastapi
 uvicorn
 sqlalchemy
 python-dotenv
-passlib[bcrypt]
+passlib
+bcrypt==3.2.2
 PyJWT
 google-genai
 psycopg2-binary
