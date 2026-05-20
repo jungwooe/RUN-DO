@@ -200,7 +200,7 @@
       const email = loginForm.querySelector('[name="email"]').value.trim();
       const password = loginForm.querySelector('[name="password"]').value;
       try {
-        const response = await fetch("http://127.0.0.1:8000/login", {
+        const response = await fetch("https://run-do.onrender.com/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password })
@@ -232,7 +232,7 @@
       const email = signupForm.querySelector('[name="email"]').value.trim();
       const password = signupForm.querySelector('[name="password"]').value;
       try {
-        const response = await fetch("http://127.0.0.1:8000/signup", {
+        const response = await fetch("https://run-do.onrender.com/signup", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, nickname: name, password })
@@ -294,7 +294,7 @@
     card.querySelector(".todo-checkbox").addEventListener("change", async (e) => {
       const todoId = e.target.getAttribute("data-id");
       try {
-        const response = await fetch(`http://127.0.0.1:8000/todos/${todoId}`, {
+        const response = await fetch(`https://run-do.onrender.com/todos/${todoId}`, {
           method: "PATCH", headers: getAuthHeaders()
         });
         if (response.ok) { loadTodos(); loadRankings(); }
@@ -308,7 +308,7 @@
       const newTaskName = prompt("수정할 과제 내용을 입력하세요:", currentTask);
       if (!newTaskName || newTaskName.trim() === "" || newTaskName === currentTask) return;
       try {
-        const response = await fetch(`http://127.0.0.1:8000/todos/${todoId}`, {
+        const response = await fetch(`https://run-do.onrender.com/todos/${todoId}`, {
           method: "PUT", headers: getAuthHeaders(),
           body: JSON.stringify({ task_name: newTaskName.trim() })
         });
@@ -322,7 +322,7 @@
       if (!confirm("정말 이 과제를 삭제할까요?")) return;
       const todoId = e.currentTarget.getAttribute("data-id");
       try {
-        const response = await fetch(`http://127.0.0.1:8000/todos/${todoId}`, {
+        const response = await fetch(`https://run-do.onrender.com/todos/${todoId}`, {
           method: "DELETE", headers: getAuthHeaders()
         });
         if (response.ok) { loadTodos(); loadRankings(); }
@@ -362,7 +362,7 @@
   const loadTodos = async () => {
     if (!todoContainer) return;
     try {
-      const response = await fetch("http://127.0.0.1:8000/todos", {
+      const response = await fetch("https://run-do.onrender.com/todos", {
         method: "GET", headers: getAuthHeaders()
       });
       if (response.status === 401) {
@@ -398,7 +398,7 @@
   const loadRankings = async () => {
     if (!rankingContainer) return;
     try {
-      const response = await fetch("http://127.0.0.1:8000/rankings");
+      const response = await fetch("https://run-do.onrender.com/rankings");
       const result = await response.json();
       if (response.ok) {
         rankingContainer.innerHTML = "";
@@ -476,7 +476,7 @@
     profileContent.innerHTML = `<p class="muted">불러오는 중...</p>`;
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/todos", {
+      const response = await fetch("https://run-do.onrender.com/todos", {
         method: "GET", headers: getAuthHeaders()
       });
       if (response.status === 401) {
