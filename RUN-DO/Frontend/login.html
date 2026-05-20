@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="로그인" />
+    <title>로그인 · RUN DO</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">본문으로 건너뛰기</a>
+
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="brand" href="./index.html" aria-label="홈으로">
+          <span class="brand-mark" aria-hidden="true">DO</span>
+          <span class="brand-text">RUN DO</span>
+        </a>
+
+        <nav class="nav" aria-label="주요 메뉴">
+          <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false">
+            <span class="sr-only">메뉴 열기</span>
+            <span aria-hidden="true">☰</span>
+          </button>
+
+          <ul class="nav-list" data-nav-list>
+            <li><a class="nav-link" href="./index.html">홈</a></li>
+            <li><a class="nav-link" href="./about.html">소개</a></li>
+          </ul>
+        </nav>
+
+        <div class="header-actions">
+          <a class="btn btn-primary" href="./login.html" aria-current="page">로그인</a>
+          <a class="btn btn-ghost" href="./signup.html">회원가입</a>
+        </div>
+      </div>
+    </header>
+
+    <main id="main" class="section">
+      <div class="container prose">
+        <h1>로그인</h1>
+        <p class="muted"></p>
+
+        <form class="form" action="#" method="post" autocomplete="on" novalidate data-auth="login">
+          <div class="form-row">
+            <label class="label" for="email">이메일</label>
+            <input class="input" id="email" name="email" type="email" inputmode="email" autocomplete="email" required />
+          </div>
+
+          <div class="form-row">
+            <label class="label" for="password">비밀번호</label>
+            <input class="input" id="password" name="password" type="password" autocomplete="current-password" required />
+          </div>
+
+          <div class="form-actions">
+            <button class="btn btn-primary" type="submit">로그인</button>
+            <a class="btn btn-ghost" href="./signup.html">회원가입</a>
+            <a class="btn btn-ghost" href="./index.html">취소</a>
+          </div>
+        </form>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <p class="muted small">© <span data-year></span> 오픈소스SW 1조 RUN DO 프로젝트</p>
+        <div class="footer-links">
+          <a class="muted small" href="./index.html">홈</a>
+        </div>
+      </div>
+    </footer>
+
+    <script src="./main.js" defer></script>
+  </body>
+</html>
+

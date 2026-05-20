@@ -1,0 +1,16 @@
+# 웹 프레임워크 및 서버 실행 도구
+fastapi
+uvicorn
+
+# 데이터베이스 통신 및 ORM
+sqlalchemy
+
+# 환경변수(.env) 관리
+python-dotenv
+
+# 보안 및 인증 (비밀번호 암호화 및 JWT 토큰)
+passlib[bcrypt]
+PyJWT
+
+# 구글 Gemini AI 최신 SDK
+google-genai
