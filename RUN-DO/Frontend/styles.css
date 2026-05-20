@@ -131,7 +131,20 @@ a:hover{opacity:.92}
 
 .header-actions{display:flex; align-items:center; gap:.5rem}
 
-.user-profile{display:flex; align-items:center; gap:.6rem}
+.user-profile{
+  display:flex; align-items:center; gap:.6rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: .3rem .6rem .3rem .3rem;
+  cursor: pointer;
+  color: var(--text);
+  transition: background .15s ease, border-color .15s ease;
+}
+.user-profile:hover{
+  background: var(--panel);
+  border-color: var(--border);
+}
 .user-avatar{
   display:grid; place-items:center;
   width:34px; height:34px; flex-shrink:0;
@@ -354,6 +367,280 @@ h1{
 }
 [data-theme="light"] .codebox{background: rgba(255,255,255,.7)}
 .codebox pre{margin:0}
+
+/* ── 프로필 드롭다운 (Google 스타일) ── */
+.profile-btn-wrapper {
+  position: relative;
+}
+
+.profile-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 60;
+  width: 300px;
+  background: #1e1e2e;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 18px;
+  box-shadow: 0 8px 40px rgba(0,0,0,.6);
+  padding: 0 0 .8rem;
+  opacity: 0;
+  transform: scale(.95) translateY(-6px);
+  pointer-events: none;
+  transition: opacity .18s ease, transform .18s ease;
+  overflow: hidden;
+}
+.profile-dropdown.open {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  pointer-events: auto;
+}
+
+.profile-dropdown-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: .85rem 1rem .7rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: .2rem;
+}
+.profile-dropdown-email {
+  font-size: .85rem;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.profile-dropdown-x {
+  display: grid; place-items: center;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: .95rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background .15s ease;
+}
+.profile-dropdown-x:hover { background: var(--panel2); color: var(--text); }
+
+.profile-dropdown-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .6rem;
+  padding: 1.1rem 1rem .9rem;
+}
+.profile-avatar-xl {
+  display: grid; place-items: center;
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(59,130,246,1), rgba(167,139,250,1));
+  font-weight: 800; font-size: 1.8rem; color: #fff;
+  box-shadow: 0 4px 20px rgba(59,130,246,.4);
+}
+.profile-greeting {
+  margin: 0;
+  font-size: 1rem;
+  text-align: center;
+  color: var(--text);
+}
+
+.profile-planner-btn {
+  display: block;
+  width: calc(100% - 2rem);
+  margin: .2rem 1rem .6rem;
+  padding: .65rem 1rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
+  font-weight: 600;
+  font-size: .95rem;
+  text-align: center;
+  cursor: pointer;
+  transition: background .15s ease;
+}
+.profile-planner-btn:hover { background: var(--panel2); }
+
+.profile-dropdown-footer {
+  display: flex;
+  justify-content: center;
+  padding: .3rem 1rem 0;
+  border-top: 1px solid var(--border);
+  margin-top: .2rem;
+  padding-top: .7rem;
+}
+.profile-logout-btn {
+  font-size: .88rem;
+  padding: .45rem .9rem;
+  color: var(--muted);
+}
+
+/* ── 공통 드로어 오버레이 ── */
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: rgba(0,0,0,.5);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .3s ease;
+}
+.drawer-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ── 공통 드로어 헤더 / 닫기 버튼 ── */
+.drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+.drawer-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+.drawer-close-btn {
+  display: grid;
+  place-items: center;
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 1rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background .15s ease, color .15s ease;
+}
+.drawer-close-btn:hover { background: var(--panel2); color: var(--text); }
+
+/* ── 프로필 드로어 (왼쪽 슬라이드) ── */
+.profile-drawer {
+  position: fixed;
+  top: 0; left: 0;
+  z-index: 400;
+  width: min(400px, 92vw);
+  height: 100%;
+  background: linear-gradient(160deg, rgba(10,20,40,.97), rgba(10,10,20,.97));
+  border-right: 1px solid rgba(96,165,250,.2);
+  box-shadow: 12px 0 48px rgba(0,0,0,.5);
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 1.4rem;
+  transform: translateX(-100%);
+  transition: transform .35s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-y: auto;
+}
+.profile-drawer.open { transform: translateX(0); }
+
+.profile-user-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-bottom: 1.2rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.2rem;
+}
+.profile-avatar-large {
+  display: grid; place-items: center;
+  width: 58px; height: 58px; flex-shrink: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(59,130,246,1), rgba(167,139,250,1));
+  font-weight: 800; font-size: 1.5rem; color: #fff;
+  box-shadow: 0 4px 20px rgba(59,130,246,.4);
+}
+.profile-display-name { margin: 0 0 .2rem; font-weight: 700; font-size: 1.1rem; }
+.profile-email { margin: 0; font-size: .85rem; color: var(--muted); }
+
+.profile-stats-row {
+  display: flex;
+  gap: .7rem;
+  margin-bottom: 1.4rem;
+}
+.profile-stat-box {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center; gap: .2rem;
+  padding: .8rem .4rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--panel);
+}
+.profile-stat-num { font-weight: 800; font-size: 1.2rem; color: var(--brand); }
+.profile-stat-label { font-size: .75rem; color: var(--muted); text-align: center; }
+
+.profile-section-title {
+  font-size: .8rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  margin: 1.2rem 0 .6rem;
+}
+.profile-task-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: .6rem;
+  padding: .6rem .8rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  margin-bottom: .4rem;
+  font-size: .9rem;
+}
+.profile-task-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.profile-task-score { font-weight: 700; color: var(--brand2); flex-shrink: 0; }
+
+/* ── 랭킹 드로어 토글 버튼 (오른쪽 고정 탭) ── */
+.ranking-toggle-btn {
+  position: fixed;
+  right: 0; top: 50%;
+  transform: translateY(-50%);
+  z-index: 200;
+  display: flex; flex-direction: column; align-items: center; gap: .35rem;
+  padding: .9rem .6rem;
+  background: linear-gradient(180deg, rgba(167,139,250,1), rgba(124,58,237,1));
+  border: 1px solid rgba(255,255,255,.18);
+  border-right: none;
+  border-radius: 14px 0 0 14px;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: -4px 0 20px rgba(124,58,237,.35);
+  transition: padding .2s ease, box-shadow .2s ease;
+}
+.ranking-toggle-btn:hover {
+  padding-right: 1rem;
+  box-shadow: -6px 0 28px rgba(124,58,237,.55);
+}
+.ranking-toggle-icon { font-size: 1.5rem; line-height: 1; }
+.ranking-toggle-label { font-size: .78rem; letter-spacing: .04em; writing-mode: vertical-lr; }
+
+/* ── 랭킹 드로어 (오른쪽 슬라이드) ── */
+.ranking-drawer {
+  position: fixed;
+  top: 0; right: 0;
+  z-index: 400;
+  width: min(380px, 92vw);
+  height: 100%;
+  background: linear-gradient(160deg, rgba(20,10,40,.97), rgba(10,10,20,.97));
+  border-left: 1px solid rgba(167,139,250,.25);
+  box-shadow: -12px 0 48px rgba(0,0,0,.5);
+  display: flex; flex-direction: column;
+  padding: 1.5rem 1.4rem;
+  transform: translateX(100%);
+  transition: transform .35s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-y: auto;
+}
+.ranking-drawer.open { transform: translateX(0); }
+.ranking-list { display: flex; flex-direction: column; gap: .6rem; flex: 1; }
 
 @media (max-width: 980px){
   .hero-inner{grid-template-columns: 1fr; }
