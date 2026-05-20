@@ -572,7 +572,7 @@
       submitBtn.style.cssText += "opacity:.7; cursor:not-allowed;";
 
       try {
-        const response = await fetch("http://127.0.0.1:8000/analyze-todo", {
+        const response = await fetch("https://run-do.onrender.com/analyze-todo", {
           method: "POST",
           headers: getAuthHeaders(),
           body: JSON.stringify({ tasks: [taskValue] })
