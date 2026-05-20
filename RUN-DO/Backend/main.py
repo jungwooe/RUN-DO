@@ -52,7 +52,9 @@ app = FastAPI()
 # ---------------------------------------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 실무에서는 ["http://localhost:3000"] 처럼 특정 주소만 허용한다고 함. 현재는 전부 허용("*")
+    allow_origins=["http://localhost:5500",
+        "http://127.0.0.1:5500",
+        "https://run-do.vercel.app"], 
     allow_credentials=True,
     allow_methods=["*"],  # GET, POST, PATCH 등 모든 통신 방식 허용
     allow_headers=["*"],  # 토큰(Bearer) 같은 헤더 정보 허용
