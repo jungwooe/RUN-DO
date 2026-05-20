@@ -14,3 +14,12 @@ PyJWT
 
 # 구글 Gemini AI 최신 SDK
 google-genai
+
+fastapi
+uvicorn
+sqlalchemy
+python-dotenv
+passlib[bcrypt]
+PyJWT
+google-genai
+psycopg2-binary
