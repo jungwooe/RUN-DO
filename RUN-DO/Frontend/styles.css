@@ -717,10 +717,6 @@ h1{
     border: 1px solid var(--border);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
-
-    /* background-color: #ffffff;
-    border-radius: 12px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08); */
 }
 
 #history-section h3 {
@@ -728,10 +724,6 @@ h1{
     color: var(--text);
     font-size: 15px;
     font-weight: 800;
-
-    /* margin-bottom: 20px;
-    color: #333;
-    font-size: 18px; */
 }
 
 /* [1차 분류] 날짜별로 묶어주는 세련된 내부 컨테이너 카드 */
