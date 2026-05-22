@@ -1,3 +1,141 @@
+// 진화된 토스트 알림창 함수 (HTML에 없으면 알아서 만듦!)
+function showToast(message) {
+    let toast = document.getElementById("toast-message");
+    
+    // 1. 화면에 알림창 뼈대가 없다면 즉시 새로 만듭니다.
+    if (!toast) {
+        toast = document.createElement("div");
+        toast.id = "toast-message";
+        document.body.appendChild(toast);
+    }
+
+    // 2. 메시지 넣고 애니메이션(show) 실행
+    toast.textContent = message;
+    toast.classList.add("show");
+
+    // 3. 3초 뒤에 애니메이션(show) 제거
+    setTimeout(() => {
+        toast.classList.remove("show");
+    }, 3000);
+}
+
+  function checkTokenExpiration() {
+    const token = localStorage.getItem("token");
+    if (!token) return; // 토큰이 없으면 패스 (비로그인 상태)
+
+    try {
+        // JWT 토큰의 Payload 부분(두 번째 조각)을 해석합니다.
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const now = Math.floor(Date.now() / 1000); // 현재 시간 (초 단위)
+
+        if (payload.exp < now) {
+            // 토큰 만료됨! 즉시 로그아웃 처리
+            localStorage.removeItem("token");
+            window.location.href = "login.html"; // 로그인 페이지로 강제 이동
+        }
+    } catch (e) {
+        console.error("토큰 검증 오류", e);
+    }
+}
+
+// 페이지가 로드될 때 즉시 실행
+document.addEventListener("DOMContentLoaded", checkTokenExpiration);
+
+// 고성능 과거 플래너 날짜별 컴포넌트 렌더링 엔진
+async function loadHistory() {
+    // 로컬 스토리지에 보관 중인 키값 이름으로 정확히 맞춤 바인딩
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+        showToast("로그인이 필요한 서비스입니다.");
+        return;
+    }
+
+    try {
+        const response = await fetch("https://run-do.onrender.com/history", {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error("과거 플래너 데이터를 가져오지 못했습니다.");
+        }
+
+        const result = await response.json(); // {"status": "success", "data": { "2026-05-22": {...} } }
+        const container = document.getElementById("history-list-container");
+        if (!container) return;
+
+        container.innerHTML = ""; // 이전 흔적 클리어 처리 (메모리 누수 방지)
+
+        const historyData = result.data;
+        const dates = Object.keys(historyData);
+
+        if (dates.length === 0) {
+            container.innerHTML = `<p class="muted" style="text-align:center; font-size:12px; padding:20px 0;">과거 기록 데이터가 비어있습니다.</p>`;
+            document.getElementById("history-section").classList.remove("hidden");
+            return;
+        }
+
+        // 1차 바인딩: 날짜 키 배열을 순회하며 마스터 카드 생성
+        dates.forEach(dateStr => {
+            const dateCard = document.createElement("div");
+            dateCard.className = "history-date-card";
+
+            const title = document.createElement("p");
+            title.className = "history-date-title";
+            title.textContent = `📅 ${dateStr}의 기록`;
+            dateCard.appendChild(title);
+
+            const dayData = historyData[dateStr];
+
+            // 2차 분류 A: 완료 과제 서브 그룹 바인딩
+            if (dayData.completed.length > 0) {
+                const group = document.createElement("div");
+                group.className = "history-status-group";
+                group.innerHTML = `<p class="history-status-label completed">✅ 완료 목표</p>`;
+                
+                const ul = document.createElement("ul");
+                ul.className = "history-item-list";
+                
+                dayData.completed.forEach(todo => {
+                    const li = document.createElement("li");
+                    li.innerHTML = `<span>${todo.task_name}</span><span class="history-item-score">+${todo.score}점</span>`;
+                    ul.appendChild(li);
+                });
+                group.appendChild(ul);
+                dateCard.appendChild(group);
+            }
+
+            // 2차 분류 B: 미완료 과제 서브 그룹 바인딩
+            if (dayData.incomplete.length > 0) {
+                const group = document.createElement("div");
+                group.className = "history-status-group";
+                group.innerHTML = `<p class="history-status-label incomplete">❌ 미완료 목표</p>`;
+                
+                const ul = document.createElement("ul");
+                ul.className = "history-item-list";
+                
+                dayData.incomplete.forEach(todo => {
+                    const li = document.createElement("li");
+                    li.innerHTML = `<span>${todo.task_name}</span><span class="history-item-score">+${todo.score}점</span>`;
+                    ul.appendChild(li);
+                });
+                group.appendChild(ul);
+                dateCard.appendChild(group);
+            }
+
+            container.appendChild(dateCard);
+        });
+
+        // 비가시화 상태 제거 및 활성화
+        document.getElementById("history-section").classList.remove("hidden");
+
+    } catch (error) {
+        showToast(error.message);
+    }
+}
+
 (() => {
   // 오늘 날짜를 한국어 형식으로 렌더링
   const renderTodayDate = () => {
@@ -209,13 +347,17 @@
         if (response.ok) {
           localStorage.setItem("access_token", data.access_token);
           writeSession(data.nickname, data.email);
-          location.href = "./planner.html";
+          showToast(`환영합니다, ${data.nickname}님!`);
+          setTimeout(() => {
+              window.location.href = "./planner.html";
+          }, 1500);
+
         } else {
-          alert("로그인 실패:\n" + (typeof data.detail === "object" ? JSON.stringify(data.detail, null, 2) : data.detail));
+          showToast("로그인 실패:\n" + (typeof data.detail === "object" ? JSON.stringify(data.detail, null, 2) : data.detail));
         }
       } catch (error) {
         console.error("백엔드 통신 실패:", error);
-        alert("서버와 연결할 수 없습니다.");
+        showToast("서버와 연결할 수 없습니다.");
       }
     });
   }
@@ -239,14 +381,16 @@
         });
         const data = await response.json();
         if (response.ok) {
-          alert("회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.");
-          location.href = "./login.html";
+          showToast("회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.");
+          setTimeout(() => {
+            window.location.href = "./login.html";
+          }, 1500);
         } else {
-          alert(data.detail || "회원가입에 실패했습니다.");
+          showToast(data.detail || "회원가입에 실패했습니다.");
         }
       } catch (error) {
         console.error("백엔드 통신 실패:", error);
-        alert("서버와 연결할 수 없습니다.");
+        showToast("서버와 연결할 수 없습니다.");
       }
     });
   }
@@ -298,7 +442,7 @@
           method: "PATCH", headers: getAuthHeaders()
         });
         if (response.ok) { loadTodos(); loadRankings(); }
-        else { alert("상태 업데이트에 실패했습니다."); e.target.checked = !e.target.checked; }
+        else { showToast("상태 업데이트에 실패했습니다."); e.target.checked = !e.target.checked; }
       } catch (error) { console.error("통신 에러:", error); e.target.checked = !e.target.checked; }
     });
 
@@ -314,7 +458,7 @@
         });
         if (response.status === 401) { location.replace("./login.html"); return; }
         if (response.ok) { loadTodos(); }
-        else alert("수정에 실패했습니다.");
+        else showToast("수정에 실패했습니다.");
       } catch (error) { console.error("수정 통신 에러:", error); }
     });
 
@@ -326,7 +470,7 @@
           method: "DELETE", headers: getAuthHeaders()
         });
         if (response.ok) { loadTodos(); loadRankings(); }
-        else alert("삭제에 실패했습니다.");
+        else showToast("삭제에 실패했습니다.");
       } catch (error) { console.error("삭제 통신 에러:", error); }
     });
 
@@ -366,7 +510,7 @@
         method: "GET", headers: getAuthHeaders()
       });
       if (response.status === 401) {
-        alert("로그인 시간이 만료되었습니다.");
+        showToast("로그인 시간이 만료되었습니다.");
         localStorage.clear();
         location.replace("./login.html");
         return;
@@ -551,6 +695,9 @@
     document.querySelector("[data-profile-toggle]")?.setAttribute("aria-expanded", "true");
     renderProfileContent();
     profileDrawerClose?.focus();
+
+    // 서랍장을 열면 프로필 스펙과 과거 데이터가 한방에 자동 갱신 로딩됩니다!
+    loadHistory();
   };
 
   profileDrawerClose?.addEventListener("click", closeAllDrawers);
@@ -579,7 +726,7 @@
         });
         const result = await response.json();
         if (response.status === 401) {
-          alert("보안을 위해 세션이 만료되었습니다. 다시 로그인해 주세요.");
+          showToast("보안을 위해 세션이 만료되었습니다. 다시 로그인해 주세요.");
           localStorage.clear();
           location.replace("./login.html");
           return;
@@ -591,13 +738,13 @@
             result.data.forEach(newTodo => renderTodoCard(newTodo));
           }
           loadTodos();
-          alert(result.message || "AI 가 과제 점수를 성공적으로 할당했습니다!");
+          showToast(result.message || "AI 가 과제 점수를 성공적으로 할당했습니다!");
         } else {
-          alert(result.detail || "인공지능 분석 중 오류가 발생했습니다.");
+          showToast(result.detail || "인공지능 분석 중 오류가 발생했습니다.");
         }
       } catch (error) {
         console.error("AI 요청 실패:", error);
-        alert("서버와 연결 상태가 불안정합니다.");
+        showToast("서버와 연결 상태가 불안정합니다.");
       } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalBtnText;
