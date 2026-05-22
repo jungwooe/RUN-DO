@@ -673,3 +673,131 @@ h1{
   .grid{grid-template-columns: 1fr}
   .footer-inner{flex-direction:column; align-items:flex-start}
 }
+
+/* =========================================
+  Toast 알림창 스타일 및 애니메이션 
+========================================= */
+#toast-message {
+    visibility: hidden; /* 평소에는 숨겨둠 */
+    min-width: 250px;
+    margin-left: -141px; /* 화면 정중앙 정렬을 위한 계산 (min-width/2 + padding) */
+    background-color: #333333; /* 세련된 다크 그레이 배경 */
+    color: #ffffff;
+    text-align: center;
+    border-radius: 8px; /* 둥근 모서리 */
+    padding: 16px;
+    position: fixed;
+    z-index: 9999; /* 다른 모든 요소보다 항상 맨 위에 표시 */
+    left: 50%;
+    bottom: 20px; /* 화면 맨 밑에 대기 */
+    font-size: 15px;
+    font-weight: 500;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15); /* 부드러운 그림자 */
+    
+    /* 애니메이션 준비 동작 (투명도 0) */
+    opacity: 0; 
+    transition: opacity 0.3s ease-in-out, bottom 0.3s ease-in-out, visibility 0.3s;
+}
+
+/* JS에서 show 클래스를 붙였을 때 작동하는 애니메이션 */
+#toast-message.show {
+    visibility: visible;
+    opacity: 1; /* 스르륵 선명해짐 */
+    bottom: 50px; /* 아래에서 위로 살짝 떠오름 */
+}
+
+
+/* =========================================
+  과거 플래너 몰아보기 스타일
+========================================= */
+#history-section {
+    margin-top: 30px;
+    padding: 20px;
+    background-color: var(--panel); /* 주변 배경과 완벽히 녹아드는 투명 다크 베이스 */
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+
+    /* background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08); */
+}
+
+#history-section h3 {
+    margin: 0 0 15px 0;
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 800;
+
+    /* margin-bottom: 20px;
+    color: #333;
+    font-size: 18px; */
+}
+
+/* [1차 분류] 날짜별로 묶어주는 세련된 내부 컨테이너 카드 */
+.history-date-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+.history-date-card:last-child {
+    margin-bottom: 0;
+}
+
+.history-date-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--brand); /* 포인트 블루 칼라링 */
+    margin: 0 0 12px 0;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+}
+
+/* [2차 분류] 날짜 내부에서 완료/미완료 서브 섹션을 분리하는 그룹 */
+.history-status-group {
+    margin-bottom: 12px;
+}
+.history-status-group:last-child {
+    margin-bottom: 0;
+}
+
+.history-status-label {
+    font-size: 12px;
+    font-weight: 700;
+    margin: 0 0 6px 0;
+}
+.history-status-label.completed { color: #2ecc71; } /* 완료는 활력 가득한 그린 */
+.history-status-label.incomplete { color: #e74c3c; } /* 미완료는 경고 레드 */
+
+.history-item-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.history-item-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+    margin-bottom: 4px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.02);
+}
+.history-item-list li:last-child {
+    margin-bottom: 0;
+}
+
+.history-item-score {
+    font-weight: 700;
+    font-size: 11px;
+    color: var(--brand2);
+    background: rgba(167, 139, 250, 0.1);
+    padding: 1px 5px;
+    border-radius: 4px;
+}
