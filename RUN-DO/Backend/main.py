@@ -414,6 +414,41 @@ def get_rankings(db: Session = Depends(get_db)):
         
     return {"status": "success", "data": ranking_list}
 
+@app.get("/history")
+def get_past_todos(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    today = date.today()
+    
+    # =컬럼명을 created_at으로 올바르게 수정하고, 최신 날짜가 맨 위에 오도록 정렬합니다.
+    past_todos = (
+        db.query(models.Todo)
+        .filter(models.Todo.owner_id == current_user.id, models.Todo.created_at < today)
+        .order_by(desc(models.Todo.created_at))
+        .all()
+    )
+
+    # 프론트엔드가 그리기 편하게 데이터를 { "날짜": { "completed": [], "incomplete": [] } } 구조로 재조립합니다.
+    history_dict = {}
+    for todo in past_todos:
+        # Date 객체를 문자열형태(예: "2026-05-22")로 변환합니다.
+        date_str = todo.created_at.strftime("%Y-%m-%d") if todo.created_at else "날짜 없음"
+        
+        if date_str not in history_dict:
+            history_dict[date_str] = {"completed": [], "incomplete": []}
+            
+        todo_data = {
+            "id": todo.id,
+            "task_name": todo.task_name,
+            "score": todo.score,
+            "reason": todo.reason
+        }
+        
+        if todo.is_completed:
+            history_dict[date_str]["completed"].append(todo_data)
+        else:
+            history_dict[date_str]["incomplete"].append(todo_data)
+
+    return {"status": "success", "data": history_dict}
+
 
 # =====================================================================================================
 
