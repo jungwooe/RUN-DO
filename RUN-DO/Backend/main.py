@@ -26,6 +26,13 @@ from sqlalchemy.orm import Session
 import models
 from database import engine, SessionLocal
 
+
+
+# *********************************** 임시수정
+models.Base.metadata.drop_all(bind=engine)
+models.Base.metadata.create_all(bind=engine)
+# ***********************************
+
 # ============================
 # 깃허브에 올리기 위한 로직들
 
