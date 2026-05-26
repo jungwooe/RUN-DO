@@ -353,8 +353,8 @@ async function loadHistory() {
           body: JSON.stringify({ email, password })
         });
         const data = await response.json();
+        
         if (response.ok) {
-          // 로그인 성공 시 처리
           localStorage.setItem("access_token", data.access_token);
           writeSession(data.nickname, data.email);
           showToast(`환영합니다, ${data.nickname}님!`);
@@ -362,9 +362,9 @@ async function loadHistory() {
               window.location.href = "./planner.html";
           }, 1500);
         } else {
-          // 로그인 실패 시 처리
           showToast("로그인 실패:\n" + (typeof data.detail === "object" ? JSON.stringify(data.detail, null, 2) : data.detail));
-        } catch (error) {
+        }
+      } catch (error) {
         console.error("백엔드 통신 실패:", error);
         showToast("서버와 연결할 수 없습니다.");
       }
@@ -389,6 +389,7 @@ async function loadHistory() {
           body: JSON.stringify({ email, nickname: name, password })
         });
         const data = await response.json();
+        
         if (response.ok) {
           showToast("회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.");
           setTimeout(() => {
@@ -403,7 +404,6 @@ async function loadHistory() {
       }
     });
   }
-
   // ---------------------------------------------------------
   // [AI 플래너 기능]
   // ---------------------------------------------------------
