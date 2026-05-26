@@ -1,3 +1,5 @@
+#uvicorn main:app --reload
+
 import os
 from dotenv import load_dotenv
 import json
@@ -12,6 +14,9 @@ from sqlalchemy import func, desc # 수학 계산(sum)과 내림차순(desc) 정
 from passlib.context import CryptContext # 여기부터 로그인 검증을 위한 코드
 from fastapi import HTTPException, status
 from datetime import datetime, timedelta, date # 시간 및 날짜 연산을 위해
+
+from fastapi.staticfiles import StaticFiles # 3d 모델 불러오기용
+
 
 # [AI 파트] 구글의 최신 SDK 라이브러리로 변경
 from google import genai
@@ -45,6 +50,7 @@ models.Base.metadata.create_all(bind=engine)
 
 # FastAPI 앱 인스턴스는 반드시 한 번만 생성합니다.
 app = FastAPI()
+
 
 # ---------------------------------------------------------
 # [보안 설정] CORS (Cross-Origin Resource Sharing) 허용
@@ -411,3 +417,5 @@ def get_rankings(db: Session = Depends(get_db)):
         })
         
     return {"status": "success", "data": ranking_list}
+
+app.mount("/", StaticFiles(directory="../Frontend", html=True), name="static")

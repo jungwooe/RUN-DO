@@ -6,6 +6,34 @@
     <meta name="description" content="오늘 할 일 리스트 만들기" />
     <title>리스트 만들기 · RUN-DO</title>
     <link rel="stylesheet" href="./styles.css" />
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "three/examples/jsm/loaders/FBXLoader.js": "https://unpkg.com/three@0.160.0/examples/jsm/loaders/FBXLoader.js",
+          "three/examples/jsm/libs/fflate.module.js": "https://unpkg.com/three@0.160.0/examples/jsm/libs/fflate.module.js"
+        }
+      }
+    </script>
+
+    <style>
+      /* 마라톤 캔버스: 인라인 박스로 본문 흐름 안에 배치 (폼 아래, 진행도 위) */
+      #marathon-container {
+        width: 100%;
+        height: 320px;
+        margin: 1.5rem 0 2rem;
+        border-radius: var(--radius);
+        overflow: hidden;
+        border: 1px solid var(--border);
+        background: #a0a0a0; /* three.js 씬이 로드되기 전 노출되는 베이스 컬러 */
+      }
+      #marathon-container canvas {
+        display: block;
+        width: 100% !important;
+        height: 100% !important;
+      }
+    </style>
   </head>
   <body>
     <a class="skip-link" href="#main">본문으로 건너뛰기</a>
@@ -39,7 +67,7 @@
       <div class="container prose">
         <h1>AI 목표 플래너 <span id="planner-today-date" style="font-size: 1.2rem; font-weight: normal; color: var(--brand); margin-left: 0.5rem;"></span></h1>
         <p class="muted">오늘 달성할 과제를 입력창에 적어보세요. 인공지능이 난이도를 분석하여 동기부여 점수를 할당합니다.</p>
-        
+
         <form class="form" id="todo-form" style="margin-bottom: 2rem;">
           <div class="form-row">
             <label class="label" for="task-input">새로운 할 일</label>
@@ -50,14 +78,27 @@
           </div>
         </form>
 
+        <!-- 마라톤 3D 캔버스: 폼 아래, 진행도 바 위 -->
+        <div id="marathon-container"></div>
+
+        <!-- 라이벌(타인) 거리/추월 정보 박스 -->
+        <div id="rival-info" style="margin: 0 0 1.5rem; padding: 0.85rem 1.1rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--panel); display: none;">
+          <div style="display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap;">
+            <span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #ff6b6b; flex-shrink: 0;"></span>
+            <strong id="rival-name" style="color: var(--text);">—</strong>
+            <span class="muted small">와의 거리</span>
+            <span id="rival-status" style="margin-left: auto; font-weight: 700;">—</span>
+          </div>
+        </div>
+
         <div style="margin-bottom: 3rem;">
           <h2 style="display: flex; justify-content: space-between; align-items: end; margin-bottom: 1rem;">
             <span>🚀 나의 성장 진행도</span>
-            <span id="progress-text" class="muted small">0 / 500 점 (목표)</span>
+            <span id="progress-text" class="muted small">0 / 0 점 (목표)</span>
           </h2>
           <div style="width: 100%; background: var(--panel); border-radius: 999px; height: 24px; position: relative; border: 1px solid var(--border);">
-            <div id="progress-fill" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--brand), var(--brand2)); border-radius: 999px; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);"></div>
-            <div id="progress-character" style="position: absolute; top: -12px; left: 0%; transition: left 0.8s cubic-bezier(0.4, 0, 0.2, 1); font-size: 2.2rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));">🏃</div>
+            <div id="progress-fill" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--brand), var(--brand2)); border-radius: 999px; transition: width 0.15s linear;"></div>
+            <div id="progress-character" style="position: absolute; top: -12px; left: 0%; transition: left 0.15s linear; font-size: 2.2rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));">🏃</div>
           </div>
         </div>
 
@@ -69,10 +110,10 @@
         <div style="margin-top: 4rem; margin-bottom: 2rem;">
           <h2 style="display: flex; justify-content: space-between; align-items: center;">
             <span>🏆 명예의 전당 (실시간 랭킹)</span>
-          <span id="ranking-today-date" class="muted small" style="font-weight: normal; font-size: 1rem;"></span>
+            <span id="ranking-today-date" class="muted small" style="font-weight: normal; font-size: 1rem;"></span>
           </h2>
           <p class="muted">모든 유저의 누적 점수를 실시간으로 집계한 순위표입니다. 과제를 완료하여 순위를 높여보세요!</p>
-          
+
           <div id="ranking-list-container" style="display: flex; flex-direction: column; gap: 0.6rem; background: var(--panel); padding: 1.2rem; border-radius: var(--radius); border: 1px solid var(--border); margin-top: 1rem;">
             <p class="muted" style="margin: 0;">랭킹 데이터를 불러오는 중...</p>
           </div>
@@ -89,6 +130,29 @@
       </div>
     </footer>
 
+    <!-- 1) 마라톤 모듈 먼저 로드해서 main.js 에 필요한 함수들을 글로벌 노출 -->
+    <script type="module">
+      import { initMarathon, setMotionState, addRival, updateRival, removeRival } from './marathon.js';
+
+      window.addEventListener('DOMContentLoaded', async () => {
+        const container = document.getElementById('marathon-container');
+        if (!container) return;
+
+        // FastAPI 가 Frontend 폴더를 루트로 서빙하므로 모델은 ./models/
+        await initMarathon(container, { modelsBase: './models/' });
+
+        // main.js 의 loadTodos() / loadRankings() 가 호출할 수 있게 글로벌 노출
+        window.setMotionState = setMotionState;
+        window.addRival = addRival;
+        window.updateRival = updateRival;
+        window.removeRival = removeRival;
+
+        // 페이지 첫 진입 시 idle 보장
+        setMotionState(0);
+      });
+    </script>
+
+    <!-- 2) main.js (IIFE) — 마라톤 모듈 이후에 실행되도록 defer -->
     <script src="./main.js" defer></script>
   </body>
 </html>
