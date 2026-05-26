@@ -420,12 +420,11 @@ def get_rankings(db: Session = Depends(get_db)):
         
     return {"status": "success", "data": ranking_list}
 
-app.mount("/", StaticFiles(directory="../Frontend", html=True), name="static")
 @app.get("/history")
 def get_past_todos(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     today = date.today()
     
-    # =컬럼명을 created_at으로 올바르게 수정하고, 최신 날짜가 맨 위에 오도록 정렬합니다.
+    # 테이블 스키마에 정의된 created_at 컬럼을 올바르게 매핑하고 최신 날짜순 정렬합니다.
     past_todos = (
         db.query(models.Todo)
         .filter(models.Todo.owner_id == current_user.id, models.Todo.created_at < today)
@@ -433,10 +432,9 @@ def get_past_todos(db: Session = Depends(get_db), current_user: models.User = De
         .all()
     )
 
-    # 프론트엔드가 그리기 편하게 데이터를 { "날짜": { "completed": [], "incomplete": [] } } 구조로 재조립합니다.
+    # [통신 규격 최적화] 프론트엔드 main.js 인터페이스에 100% 일치하도록 날짜별 그룹핑 맵 구조로 정형화합니다.
     history_dict = {}
     for todo in past_todos:
-        # Date 객체를 문자열형태(예: "2026-05-22")로 변환합니다.
         date_str = todo.created_at.strftime("%Y-%m-%d") if todo.created_at else "날짜 없음"
         
         if date_str not in history_dict:
@@ -455,14 +453,3 @@ def get_past_todos(db: Session = Depends(get_db), current_user: models.User = De
             history_dict[date_str]["incomplete"].append(todo_data)
 
     return {"status": "success", "data": history_dict}
-
-
-# =====================================================================================================
-
-# python -m venv venv // 가상 환경 만드는 명령어
-# .\venv\Scripts\activate // venv가상 환경 활성화 명령어
-# deactivate // 비활성화 명령어
-# uvicorn main:app --reload // thunder client에서 실행할 때 사용할 명령어
-# Remove-Item -Recurse -Force .git // 깃허브에 올릴 내용 끝나고 기본 코드 폴더로 돌리고 싶을 때 사용할 명령어.
-
-# =====================================================================================================
