@@ -159,15 +159,6 @@ async function loadHistory() {
     if (plannerDateEl) plannerDateEl.textContent = `[${formattedDate}]`;
     if (rankingDateEl) rankingDateEl.textContent = `${formattedDate} 기준`;
   };
-
-    const today = new Date();
-    const formatter = new Intl.DateTimeFormat("ko-KR", {
-      month: "long", day: "numeric", weekday: "long"
-    });
-    const formattedDate = formatter.format(today);
-    if (plannerDateEl) plannerDateEl.textContent = `[${formattedDate}]`;
-    if (rankingDateEl) rankingDateEl.textContent = `${formattedDate} 기준`;
-  };
   renderTodayDate();
 
   const root = document.documentElement;
@@ -621,13 +612,10 @@ async function loadHistory() {
   const renderTodoCard = (todo) => {
     const card = document.createElement("div");
     card.className = "tile";
-
-  const renderTodoCard = (todo) => {
-    const card = document.createElement("div");
-    card.className = "tile";
     card.style.borderLeft = todo.is_completed ? "4px solid var(--muted)" : "4px solid var(--brand)";
     card.style.opacity = todo.is_completed ? "0.5" : "1";
     card.style.transition = "all 0.2s ease-in-out";
+    
     card.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: start;">
         <div style="display: flex; gap: 0.8rem; align-items: start;">
@@ -647,49 +635,27 @@ async function loadHistory() {
       </div>
     `;
 
-    const checkbox = card.querySelector(".todo-checkbox");
-    checkbox.addEventListener("change", async (e) => {
+    // 상태 변경 (체크박스)
     card.querySelector(".todo-checkbox").addEventListener("change", async (e) => {
       const todoId = e.target.getAttribute("data-id");
       try {
         const response = await fetch(`https://run-do.onrender.com/todos/${todoId}`, {
           method: "PATCH", headers: getAuthHeaders()
         });
-
         if (response.ok) {
           const result = await response.json();
-
-          if (result.is_completed) {
-            // ⭐ 체크됨 → 이 미션 점수만큼의 운동 세션 시작 (이전 세션 덮어씀)
-            startMotionSession(todo.score);
-          } else {
-            // ⭐ 언체크됨 → 즉시 idle, 진행 중인 세션 취소
-            cancelMotionSession();
-          }
+          if (result.is_completed) startMotionSession(todo.score);
+          else cancelMotionSession();
           loadTodos();
           loadRankings();
         } else {
           showToast("상태 업데이트에 실패했습니다.");
           e.target.checked = !e.target.checked;
         }
-      } catch (error) {
-        console.error("통신 에러:", error);
-        e.target.checked = !e.target.checked;
-      }
-    });
-
-    const editBtn = card.querySelector(".edit-btn");
-    editBtn.addEventListener("click", async (e) => {
-      const todoId = e.currentTarget.getAttribute("data-id");
-      const currentTask = e.currentTarget.getAttribute("data-task");
-
-      const newTaskName = prompt("수정할 과제 내용을 입력하세요:", currentTask);
-
-        if (response.ok) { loadTodos(); loadRankings(); }
-        else { showToast("상태 업데이트에 실패했습니다."); e.target.checked = !e.target.checked; }
       } catch (error) { console.error("통신 에러:", error); e.target.checked = !e.target.checked; }
     });
 
+    // 수정 버튼
     card.querySelector(".edit-btn").addEventListener("click", async (e) => {
       const todoId = e.currentTarget.getAttribute("data-id");
       const currentTask = e.currentTarget.getAttribute("data-task");
@@ -697,40 +663,15 @@ async function loadHistory() {
       if (!newTaskName || newTaskName.trim() === "" || newTaskName === currentTask) return;
       try {
         const response = await fetch(`https://run-do.onrender.com/todos/${todoId}`, {
-          method: "PUT",
-          headers: getAuthHeaders(),
-          body: JSON.stringify({ task_name: newTaskName.trim() })
-        });
-
-        if (response.status === 401) { location.replace("./login.html"); return; }
-        if (response.ok) { loadTodos(); }
-        else showToast("수정에 실패했습니다.");
-      } catch (error) { console.error("수정 통신 에러:", error); }
-    });
-
-    const deleteBtn = card.querySelector(".delete-btn");
-    deleteBtn.addEventListener("click", async (e) => {
-      if (!confirm("정말 이 과제를 삭제할까요?")) return;
-      const todoId = e.currentTarget.getAttribute("data-id");
-      try {
-        const response = await fetch(`https://run-do.onrender.com/todos/${todoId}`, { method: "DELETE", headers: getAuthHeaders() });
-        if (response.ok) {
-          // ⭐ 삭제 시 즉시 idle (디폴트 상태)
-          cancelMotionSession();
-          loadTodos();
-          loadRankings();
-        }
-        else showToast("삭제에 실패했습니다.");
-        const response = await fetch(`https://run-do.onrender.com/todos/${todoId}`, {
           method: "PUT", headers: getAuthHeaders(),
           body: JSON.stringify({ task_name: newTaskName.trim() })
         });
-        if (response.status === 401) { location.replace("./login.html"); return; }
-        if (response.ok) { loadTodos(); }
+        if (response.ok) loadTodos();
         else showToast("수정에 실패했습니다.");
       } catch (error) { console.error("수정 통신 에러:", error); }
     });
 
+    // 삭제 버튼
     card.querySelector(".delete-btn").addEventListener("click", async (e) => {
       if (!confirm("정말 이 과제를 삭제할까요?")) return;
       const todoId = e.currentTarget.getAttribute("data-id");
@@ -738,8 +679,11 @@ async function loadHistory() {
         const response = await fetch(`https://run-do.onrender.com/todos/${todoId}`, {
           method: "DELETE", headers: getAuthHeaders()
         });
-        if (response.ok) { loadTodos(); loadRankings(); }
-        else showToast("삭제에 실패했습니다.");
+        if (response.ok) {
+          cancelMotionSession();
+          loadTodos();
+          loadRankings();
+        } else showToast("삭제에 실패했습니다.");
       } catch (error) { console.error("삭제 통신 에러:", error); }
     });
 
@@ -904,18 +848,6 @@ async function loadHistory() {
           rankingContainer.innerHTML = `<p class="muted" style="margin:0;">아직 랭킹에 등록된 유저가 없습니다.</p>`;
           return;
         }
-
-        result.data.forEach((userRank) => {
-          const row = document.createElement("div");
-          row.style.display = "flex";
-          row.style.justifyContent = "space-between";
-          row.style.alignItems = "center";
-          row.style.padding = "0.75rem 1rem";
-          row.style.borderRadius = "10px";
-
-          row.style.background = userRank.rank === 1 ? "rgba(234, 179, 8, 0.12)" : "rgba(255, 255, 255, 0.02)";
-          row.style.border = userRank.rank === 1 ? "1px solid rgba(234, 179, 8, 0.3)" : "1px solid var(--border)";
-
         result.data.forEach((userRank) => {
           const row = document.createElement("div");
           row.style.cssText = `display:flex; justify-content:space-between; align-items:center; padding:.75rem 1rem; border-radius:10px; background:${userRank.rank === 1 ? 'rgba(234,179,8,.12)' : 'rgba(255,255,255,.02)'}; border:1px solid ${userRank.rank === 1 ? 'rgba(234,179,8,.3)' : 'var(--border)'};`;
