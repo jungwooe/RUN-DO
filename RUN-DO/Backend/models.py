@@ -27,3 +27,4 @@ class User(Base):
     email = Column(String, unique=True, index=True) # 중복 가입 방지
     nickname = Column(String)                       # 프로필 및 랭킹 표시용 닉네임 (이름)
     hashed_password = Column(String)                   # 암호화된 비밀번호 저장
+    profile_image = Column(String, nullable=True)    # 아바타 이모지 문자열 저장용 열 추가
