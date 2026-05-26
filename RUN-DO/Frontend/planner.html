@@ -99,32 +99,12 @@
           <div style="width: 100%; background: var(--panel); border-radius: 999px; height: 24px; position: relative; border: 1px solid var(--border);">
             <div id="progress-fill" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--brand), var(--brand2)); border-radius: 999px; transition: width 0.15s linear;"></div>
             <div id="progress-character" style="position: absolute; top: -12px; left: 0%; transition: left 0.15s linear; font-size: 2.2rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));">🏃</div>
-        <div style="margin-bottom: 3rem;">
-          <h2 style="display: flex; justify-content: space-between; align-items: end; margin-bottom: 1rem;">
-            <span>🚀 나의 성장 진행도</span>
-            <span id="progress-text" class="muted small">0 / 500 점 (목표)</span>
-          </h2>
-          <div style="width: 100%; background: var(--panel); border-radius: 999px; height: 24px; position: relative; border: 1px solid var(--border);">
-            <div id="progress-fill" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--brand), var(--brand2)); border-radius: 999px; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);"></div>
-            <div id="progress-character" style="position: absolute; top: -12px; left: 0%; transition: left 0.8s cubic-bezier(0.4, 0, 0.2, 1); font-size: 2.2rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));">🏃</div>
           </div>
         </div>
 
         <h2>오늘의 미션 리스트</h2>
         <div id="todo-list-container" class="grid" style="grid-template-columns: 1fr; gap: 1rem;">
           <p class="muted" id="empty-message">등록된 미션이 없습니다. 첫 과제를 추가해 보세요!</p>
-        </div>
-
-        <div style="margin-top: 4rem; margin-bottom: 2rem;">
-          <h2 style="display: flex; justify-content: space-between; align-items: center;">
-            <span>🏆 명예의 전당 (실시간 랭킹)</span>
-            <span id="ranking-today-date" class="muted small" style="font-weight: normal; font-size: 1rem;"></span>
-          </h2>
-          <p class="muted">모든 유저의 누적 점수를 실시간으로 집계한 순위표입니다. 과제를 완료하여 순위를 높여보세요!</p>
-
-          <div id="ranking-list-container" style="display: flex; flex-direction: column; gap: 0.6rem; background: var(--panel); padding: 1.2rem; border-radius: var(--radius); border: 1px solid var(--border); margin-top: 1rem;">
-            <p class="muted" style="margin: 0;">랭킹 데이터를 불러오는 중...</p>
-          </div>
         </div>
       </div>
     </main>
