@@ -99,6 +99,14 @@
           <div style="width: 100%; background: var(--panel); border-radius: 999px; height: 24px; position: relative; border: 1px solid var(--border);">
             <div id="progress-fill" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--brand), var(--brand2)); border-radius: 999px; transition: width 0.15s linear;"></div>
             <div id="progress-character" style="position: absolute; top: -12px; left: 0%; transition: left 0.15s linear; font-size: 2.2rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));">🏃</div>
+        <div style="margin-bottom: 3rem;">
+          <h2 style="display: flex; justify-content: space-between; align-items: end; margin-bottom: 1rem;">
+            <span>🚀 나의 성장 진행도</span>
+            <span id="progress-text" class="muted small">0 / 500 점 (목표)</span>
+          </h2>
+          <div style="width: 100%; background: var(--panel); border-radius: 999px; height: 24px; position: relative; border: 1px solid var(--border);">
+            <div id="progress-fill" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--brand), var(--brand2)); border-radius: 999px; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+            <div id="progress-character" style="position: absolute; top: -12px; left: 0%; transition: left 0.8s cubic-bezier(0.4, 0, 0.2, 1); font-size: 2.2rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));">🏃</div>
           </div>
         </div>
 
@@ -154,5 +162,47 @@
 
     <!-- 2) main.js (IIFE) — 마라톤 모듈 이후에 실행되도록 defer -->
     <script src="./main.js" defer></script>
+    <!-- 공유 오버레이 -->
+    <div class="drawer-overlay" id="drawer-overlay" aria-hidden="true"></div>
+
+    <!-- 프로필 드로어 (왼쪽) -->
+    <aside class="profile-drawer" id="profile-drawer" aria-label="내 프로필" aria-hidden="true">
+      <div class="drawer-header">
+        <h2 class="drawer-title">👤 내 프로필</h2>
+        <button class="drawer-close-btn" id="profile-drawer-close" aria-label="닫기">✕</button>
+      </div>
+      <div id="profile-content">
+        <p class="muted">불러오는 중...</p>
+      </div>
+      <div id="history-section" class="hidden">
+        <h3>📊 과거 플래너 리포트</h3>
+        <div id="history-list-container">
+            </div>
+      </div>
+    </aside>
+
+    <!-- 랭킹 드로어 토글 버튼 (오른쪽 고정) -->
+    <button class="ranking-toggle-btn" id="ranking-toggle-btn" aria-label="명예의 전당 열기" aria-expanded="false" aria-controls="ranking-drawer">
+      <span class="ranking-toggle-icon">🏆</span>
+      <span class="ranking-toggle-label">랭킹</span>
+    </button>
+
+    <!-- 랭킹 드로어 (오른쪽) -->
+    <aside class="ranking-drawer" id="ranking-drawer" aria-label="명예의 전당" aria-hidden="true">
+      <div class="drawer-header">
+        <div>
+          <h2 class="drawer-title">🏆 명예의 전당</h2>
+          <p id="ranking-today-date" class="muted small" style="margin: 0.2rem 0 0;"></p>
+        </div>
+        <button class="drawer-close-btn" id="ranking-drawer-close" aria-label="닫기">✕</button>
+      </div>
+      <p class="muted small" style="margin: 0 0 1rem;">과제를 완료하여 순위를 높여보세요!</p>
+      <div id="ranking-list-container" class="ranking-list">
+        <p class="muted" style="margin: 0;">랭킹 데이터를 불러오는 중...</p>
+      </div>
+    </aside>
+
+    <script src="./main.js" defer></script>
+    <div id="toast-message"></div>
   </body>
 </html>

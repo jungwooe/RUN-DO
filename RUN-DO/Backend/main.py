@@ -58,7 +58,9 @@ app = FastAPI()
 # ---------------------------------------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 실무에서는 ["http://localhost:3000"] 처럼 특정 주소만 허용한다고 함. 현재는 전부 허용("*")
+    allow_origins=["http://localhost:5500",
+        "http://127.0.0.1:5500",
+        "https://run-do.vercel.app"], 
     allow_credentials=True,
     allow_methods=["*"],  # GET, POST, PATCH 등 모든 통신 방식 허용
     allow_headers=["*"],  # 토큰(Bearer) 같은 헤더 정보 허용
@@ -419,3 +421,48 @@ def get_rankings(db: Session = Depends(get_db)):
     return {"status": "success", "data": ranking_list}
 
 app.mount("/", StaticFiles(directory="../Frontend", html=True), name="static")
+@app.get("/history")
+def get_past_todos(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    today = date.today()
+    
+    # =컬럼명을 created_at으로 올바르게 수정하고, 최신 날짜가 맨 위에 오도록 정렬합니다.
+    past_todos = (
+        db.query(models.Todo)
+        .filter(models.Todo.owner_id == current_user.id, models.Todo.created_at < today)
+        .order_by(desc(models.Todo.created_at))
+        .all()
+    )
+
+    # 프론트엔드가 그리기 편하게 데이터를 { "날짜": { "completed": [], "incomplete": [] } } 구조로 재조립합니다.
+    history_dict = {}
+    for todo in past_todos:
+        # Date 객체를 문자열형태(예: "2026-05-22")로 변환합니다.
+        date_str = todo.created_at.strftime("%Y-%m-%d") if todo.created_at else "날짜 없음"
+        
+        if date_str not in history_dict:
+            history_dict[date_str] = {"completed": [], "incomplete": []}
+            
+        todo_data = {
+            "id": todo.id,
+            "task_name": todo.task_name,
+            "score": todo.score,
+            "reason": todo.reason
+        }
+        
+        if todo.is_completed:
+            history_dict[date_str]["completed"].append(todo_data)
+        else:
+            history_dict[date_str]["incomplete"].append(todo_data)
+
+    return {"status": "success", "data": history_dict}
+
+
+# =====================================================================================================
+
+# python -m venv venv // 가상 환경 만드는 명령어
+# .\venv\Scripts\activate // venv가상 환경 활성화 명령어
+# deactivate // 비활성화 명령어
+# uvicorn main:app --reload // thunder client에서 실행할 때 사용할 명령어
+# Remove-Item -Recurse -Force .git // 깃허브에 올릴 내용 끝나고 기본 코드 폴더로 돌리고 싶을 때 사용할 명령어.
+
+# =====================================================================================================
