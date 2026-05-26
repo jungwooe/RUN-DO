@@ -794,7 +794,6 @@ async function loadHistory() {
     }
   };
   // ---------------------------------------------------------
-  // [랭킹]
   // [랭킹 기능]
   // ---------------------------------------------------------
   const rankingContainer = document.querySelector("#ranking-list-container");
@@ -802,13 +801,14 @@ async function loadHistory() {
   const loadRankings = async () => {
     if (!rankingContainer) return;
     try {
+      // 중복 선언을 제거하고 명확한 GET 통신 한 줄만 남겼습니다.
       const response = await fetch("https://run-do.onrender.com/rankings", { method: "GET" });
-      const response = await fetch("https://run-do.onrender.com/rankings");
       const result = await response.json();
+      
       if (response.ok) {
         rankingContainer.innerHTML = "";
 
-        // ⭐ 라이벌 결정: 본인 제외 1위 (없으면 그냥 첫 번째)
+        // 라이벌 결정: 본인 제외 1위 (없으면 그냥 첫 번째)
         const myNickname = session ? session.name : null;
         const rivalCandidate = (result.data || []).find(u => u.nickname !== myNickname);
 
@@ -817,10 +817,10 @@ async function loadHistory() {
             nickname: rivalCandidate.nickname,
             score: Number(rivalCandidate.total_score) || 0
           };
-          // 라이벌 캐릭터를 3D 씬에 추가 (이미 있으면 내부 가드로 무시)
+          // 라이벌 캐릭터를 3D 씬에 추가
           if (typeof window.addRival === "function") {
             try {
-              await window.addRival({ x: RIVAL_LANE_X, z: 5, color: RIVAL_COLOR });
+              await window.addRival({ x: 1.2, z: 5, color: 0xff6b6b }); // RIVAL_LANE_X, RIVAL_COLOR 직접 적용
             } catch (e) { console.warn("라이벌 캐릭터 추가 실패:", e); }
           }
           updateRivalUI();
@@ -835,6 +835,7 @@ async function loadHistory() {
           rankingContainer.innerHTML = `<p class="muted" style="margin:0;">아직 랭킹에 등록된 유저가 없습니다.</p>`;
           return;
         }
+
         result.data.forEach((userRank) => {
           const row = document.createElement("div");
           row.style.cssText = `display:flex; justify-content:space-between; align-items:center; padding:.75rem 1rem; border-radius:10px; background:${userRank.rank === 1 ? 'rgba(234,179,8,.12)' : 'rgba(255,255,255,.02)'}; border:1px solid ${userRank.rank === 1 ? 'rgba(234,179,8,.3)' : 'var(--border)'};`;
@@ -1006,7 +1007,7 @@ async function loadHistory() {
       submitBtn.style.cssText += "opacity:.7; cursor:not-allowed;";
 
       try {
-        const response = await fetch("https://run-do.onrender.com/analyze-todo", {
+        // 중복된 통신 코드를 한 줄로 병합했습니다.
         const response = await fetch("https://run-do.onrender.com/analyze-todo", {
           method: "POST",
           headers: getAuthHeaders(),
@@ -1043,7 +1044,6 @@ async function loadHistory() {
       }
     });
   }
-
   // 페이지 진입 시 첫 로드
   loadTodos();
   loadRankings();
