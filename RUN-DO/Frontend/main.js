@@ -20,7 +20,7 @@ function showToast(message) {
 }
 
   function checkTokenExpiration() {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("access_token");
     if (!token) return; // 토큰이 없으면 패스 (비로그인 상태)
 
     try {
@@ -30,7 +30,7 @@ function showToast(message) {
 
         if (payload.exp < now) {
             // 토큰 만료됨! 즉시 로그아웃 처리
-            localStorage.removeItem("token");
+            localStorage.removeItem("access_token");
             window.location.href = "login.html"; // 로그인 페이지로 강제 이동
         }
     } catch (e) {
