@@ -32,9 +32,3 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # 4. 베이스(Base) 클래스
 Base = declarative_base()
 
-
-import models 
-
-# 기존의 꼬인 테이블들을 시원하게 박살 내고 새 테이블을 만듭니다.
-models.Base.metadata.drop_all(bind=engine) 
-models.Base.metadata.create_all(bind=engine)
