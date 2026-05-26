@@ -767,14 +767,12 @@ async function loadHistory() {
           }
         });
 
-        // 헤더 배지 갱신 (완료한 미션 AI 점수 합 — DB 기반, 마라톤 진행도와 별개)
+        // 헤더 배지 갱신
         updateScoreBadge(totalCompletedScore);
 
-        // ⭐ 진행도 목표 갱신
+        // 진행도 목표 갱신
         progressGoal = totalPossibleScore;
 
-        // ⭐ 새로고침/첫 진입 시 DB 의 완료 점수로 진행도 시드 (한 번만)
-        //   캐릭터 모션은 디폴트 idle 유지. 이후 체크 이벤트부터 시간 누적 시작.
         if (isFirstTodoLoad) {
           progressAccumulated = totalCompletedScore;
           isFirstTodoLoad = false;
@@ -788,21 +786,13 @@ async function loadHistory() {
         }
 
         renderProgressBar();
-        let totalScore = 0;
-        let totalPossibleScore = 0;
-        result.data.forEach(todo => {
-          renderTodoCard(todo);
-          totalPossibleScore += todo.score;
-          if (todo.is_completed) totalScore += todo.score;
-        });
-        updateScoreUI(totalScore, totalPossibleScore);
+        updateScoreUI(totalCompletedScore, totalPossibleScore);
         loadRankings();
       }
     } catch (error) {
       console.error("할 일 목록 로드 실패:", error);
     }
   };
-
   // ---------------------------------------------------------
   // [랭킹]
   // [랭킹 기능]
