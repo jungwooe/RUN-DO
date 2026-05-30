@@ -995,6 +995,7 @@ async function loadHistory() {
   if (todoForm) {
     todoForm.addEventListener("submit", async (e) => {
       e.preventDefault();
+      e.stopImmediatePropagation();  
 
       const taskInput = document.querySelector("#task-input");
       const submitBtn = todoForm.querySelector('button[type="submit"]');
@@ -1037,10 +1038,9 @@ async function loadHistory() {
         console.error("AI 요청 실패:", error);
         showToast("서버와 연결 상태가 불안정합니다.");
       } finally {
+        // 통신 성공/실패 여부와 상관없이 버튼 원상 복구
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalBtnText;
-        submitBtn.style.opacity = "1";
-        submitBtn.style.cursor = "pointer";
       }
     });
   }
