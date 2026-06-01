@@ -13,6 +13,7 @@ let modelsBaseCached = './models/'; // 라이벌 추가 시 재사용
 let sky;                  // 하늘 셰이더 메쉬 (시간대 변화용)
 let particleSystem = null; // 색종이 파티클
 let particleStartTime = 0;
+let rivalSpawnTime = 0;
 const PARTICLE_LIFETIME = 1.5; // 초
 
 // 시간대 색상 키프레임
@@ -59,7 +60,7 @@ let rivalCharacterLoading = false;
 
 let rivalTargetX = null;
 let rivalTargetZ = null;
-const RIVAL_LERP_PER_SEC = 6;
+const RIVAL_LERP_PER_SEC = 30;
 // === 외부에 노출할 API ===
 
 /**
@@ -274,6 +275,8 @@ export async function addRival(options = {}) {
 
         scene.add(obj);
         rivalCharacter = obj;
+        rivalCharacter.visible = false;
+        rivalSpawnTime = Date.now();
 
         // 라이벌 mixer + 애니메이션 로드
         rivalMixer = new THREE.AnimationMixer(rivalCharacter);
@@ -319,7 +322,13 @@ export function updateRival(opts = {}) {
     if (opts.z !== undefined) rivalTargetZ = opts.z;
 
     if (opts.visible !== undefined) {
-        rivalCharacter.visible = !!opts.visible;
+        const inSpawnDelay = Date.now() - rivalSpawnTime < 1000;
+
+        if (inSpawnDelay) {
+            rivalCharacter.visible = false;
+        } else {
+            rivalCharacter.visible = !!opts.visible;
+        }
     }
 
     if (opts.motion) {
@@ -629,7 +638,7 @@ function animate() {
     if (mixer) mixer.update(delta);
     if (rivalMixer) rivalMixer.update(delta);
 
-    if (rivalCharacter && rivalCharacter.visible) {
+    if (rivalCharacter) {
         const t= 1 - Math.exp(-RIVAL_LERP_PER_SEC * delta);
         if (rivalTargetX !== null){
             rivalCharacter.position.x += (rivalTargetX - rivalCharacter.position.x) * t;

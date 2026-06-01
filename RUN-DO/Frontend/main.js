@@ -435,7 +435,7 @@ async function loadHistory() {
   // =========================================================
   const MOTION_SPEED = { IDLE: 0, WALK: 0.2, RUN: 0.7 }; // marathon.js 내부 SPEED 와 동일
   const PROGRESS_TICK_MS = 100;
-  const SPEED_MULTIPLIER = 4; // 진행도 차오르는 속도 배율 (시연용)
+  const SPEED_MULTIPLIER = 5; // 진행도 차오르는 속도 배율 (시연용)
 
   let progressGoal = 0;            // = totalPossibleScore (등록된 모든 미션 AI 점수 합)
   let progressAccumulated = 0;     // 시간으로 차오른 누적 진행도
@@ -552,8 +552,8 @@ async function loadHistory() {
   // 가시성 범위 (점수 차 diff = rivalScore - myProgress 기준)
   //   diff > +5  → 라이벌이 5점 이상 앞섬 → 너무 멀어서 안 보임
   //   diff < -2  → 내가 2점 이상 추월 → 뒤로 사라짐
-  const RIVAL_VISIBLE_FAR_MAX = 5;     // 라이벌이 앞설 때 보이는 최대 점수 차
-  const RIVAL_VISIBLE_NEAR_MAX = 2;    // 내가 앞설 때 보이는 최대 점수 차 (추월 거리)
+  const RIVAL_VISIBLE_FAR_MAX = 15;     // 라이벌이 앞설 때 보이는 최대 점수 차
+  const RIVAL_VISIBLE_NEAR_MAX = 5;    // 내가 앞설 때 보이는 최대 점수 차 (추월 거리)
 
   const waitForMarathon = () => new Promise(resolve => {
     if (window.__MTReady) return resolve();
@@ -840,9 +840,12 @@ async function loadHistory() {
 
           await waitForMarathon();
           // 라이벌 캐릭터를 3D 씬에 추가
+          const initialDiff = currentRival.score - progressAccumulated;
+          const initialZ = initialDiff * RIVAL_Z_SCALE;
+
           if (typeof window.addRival === "function") {
             try {
-              await window.addRival({ x: 1.2, z: 5, color: 0xff6b6b }); // RIVAL_LANE_X, RIVAL_COLOR 직접 적용
+              await window.addRival({ x: RIVAL_LANE_X, z: initialZ, color: 0xff6b6b }); // RIVAL_LANE_X, RIVAL_COLOR 직접 적용
             } catch (e) { console.warn("라이벌 캐릭터 추가 실패:", e); }
           }
           updateRivalUI();
