@@ -61,9 +61,11 @@ async function loadHistory() {
         if (!response.ok) {
             throw new Error("과거 플래너 데이터를 가져오지 못했습니다.");
         }
-
+// 1. 서버 응답을 JSON 형식으로 파싱 (날짜별 데이터가 포함된 객체 수신)
         const result = await response.json(); // {"status": "success", "data": { "2026-05-22": {...} } }
+        // 2. 데이터를 렌더링할 HTML 컨테이너 요소(history-list-container)를 식별
         const container = document.getElementById("history-list-container");
+        // 3. 방어적 프로그래밍: 컨테이너 요소가 존재하지 않을 경우 함수를 종료하여 에러 방지
         if (!container) return;
 
         container.innerHTML = ""; // 이전 흔적 클리어 처리 (메모리 누수 방지)
