@@ -511,6 +511,17 @@ async function loadHistory() {
 
     let sessionJustEnded = false;
 
+    let reachedGoal = progressGoal > 0 && progressAccumulated >= progressGoal;
+
+    /*  console.log('tick', {
+        progressAccumulated: progressAccumulated.toFixed(2),
+        progressGoal,
+        activeSessionRemaining: activeSessionRemaining.toFixed(2),
+        reachedGoal,
+        wasReachedGoal
+    });*/
+
+
     if (activeSessionRemaining > 0) {
       const speed = scoreToSpeed(activeSessionScore) * SPEED_MULTIPLIER;
       const consumed = Math.min(speed * delta, activeSessionRemaining);
@@ -518,7 +529,7 @@ async function loadHistory() {
       progressAccumulated += consumed;
 
       // 진행도 클램프
-      if (progressGoal > 0 && progressAccumulated > progressGoal) {
+      if (progressGoal > 0 && progressAccumulated >= progressGoal - 0.01) {
         progressAccumulated = progressGoal;
       }
 
@@ -527,15 +538,22 @@ async function loadHistory() {
         activeSessionScore = 0;
         sessionJustEnded = true;
       }
+
+      reachedGoal = progressGoal > 0 && progressAccumulated >= progressGoal;
     }
 
-    const reachedGoal = progressGoal > 0 && progressAccumulated >= progressGoal;
+    /*if (reachedGoal) {
+      console.log('결승 도달 체크', { reachedGoal, wasReachedGoal, progressAccumulated, progressGoal});
+    }*/
+
+    
     if (reachedGoal && !wasReachedGoal) {
       activeSessionScore = 0;
       activeSessionRemaining = 0;
       sessionJustEnded = false;
       pendingDanceTrigger = false;
       pendingConfettiTrigger = false;
+      tempMotionEndAt = 0;
 
       if (typeof window.spawnConfetti === "function") {
             window.spawnConfetti({ x: 0, y: 4, z: 0, count: 250 });
@@ -545,7 +563,7 @@ async function loadHistory() {
         }
         // 춤 3초
         if (typeof window.setMotionState === "function") {
-            window.setMotionState(-1);
+            window.setMotionState(-2);
             tempMotionEndAt = Date.now() + 3000;
         }
     }

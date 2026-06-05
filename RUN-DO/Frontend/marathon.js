@@ -219,9 +219,13 @@ export function setMotionState(achievementRate) {
     } else if (achievementRate > 0 && achievementRate < 0.5) {
         targetSpeed = SPEED.WALK;
         fadeAction('walk');
-    } else if (achievementRate == -1) {
+    } else if (achievementRate === -1) {
         targetSpeed = SPEED.IDLE;
         fadeAction('egg');
+    } else if ( achievementRate === -2) {
+        targetSpeed = SPEED.IDLE;
+        fadeAction('victory');
+
     } else {
         targetSpeed = SPEED.RUN;
         fadeAction('run');
@@ -759,17 +763,19 @@ async function loadCharacter(modelsBase, characterFile = 'xbotre.fbx') {
     mixer = new THREE.AnimationMixer(character);
 
     // 애니메이션들 로드해서 같은 mixer에 등록
-    const [idleFbx, walkFbx, runFbx, egg] = await Promise.all([
+    const [idleFbx, walkFbx, runFbx, egg, victoryFbx] = await Promise.all([
         fbxLoader.loadAsync(modelsBase + 'idlenonskin.fbx'),
         fbxLoader.loadAsync(modelsBase + 'walknonskin.fbx'),
         fbxLoader.loadAsync(modelsBase + 'frunnonskin.fbx'),
         fbxLoader.loadAsync(modelsBase + 'egg.fbx'),
+        fbxLoader.loadAsync(modelsBase + 'victory.fbx')
     ]);
 
     const idleClip = retargetClipToCharacter(idleFbx.animations[0], character);
     const walkClip = retargetClipToCharacter(walkFbx.animations[0], character);
     const runClip = retargetClipToCharacter(runFbx.animations[0], character);
     const eggClip = retargetClipToCharacter(egg.animations[0], character);
+    const victoryClip = retargetClipToCharacter(victoryFbx.animations[0], character);
 
     
     console.log('=== 캐릭터 본 (처음 10개) ===');
@@ -789,6 +795,7 @@ async function loadCharacter(modelsBase, characterFile = 'xbotre.fbx') {
     actions.walk = mixer.clipAction(walkClip);
     actions.run = mixer.clipAction(runClip);
     actions.egg = mixer.clipAction(eggClip);
+    actions.victory = mixer.clipAction(victoryClip);
 
     // 시작은 idle
     actions.idle.play();
