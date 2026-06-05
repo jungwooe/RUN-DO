@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="오늘 할 일 리스트 만들기" />
+    <title>리스트 만들기 · RUN-DO</title>
+    <link rel="stylesheet" href="./styles.css" />
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "three/examples/jsm/loaders/FBXLoader.js": "https://unpkg.com/three@0.160.0/examples/jsm/loaders/FBXLoader.js",
+          "three/examples/jsm/libs/fflate.module.js": "https://unpkg.com/three@0.160.0/examples/jsm/libs/fflate.module.js"
+        }
+      }
+    </script>
+
+    <style>
+      /* 마라톤 캔버스: 인라인 박스로 본문 흐름 안에 배치 (폼 아래, 진행도 위) */
+      #marathon-container {
+        width: 100%;
+        height: 320px;
+        margin: 1.5rem 0 2rem;
+        border-radius: var(--radius);
+        overflow: hidden;
+        border: 1px solid var(--border);
+        background: #a0a0a0; /* three.js 씬이 로드되기 전 노출되는 베이스 컬러 */
+      }
+      #marathon-container canvas {
+        display: block;
+        width: 100% !important;
+        height: 100% !important;
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">본문으로 건너뛰기</a>
+
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="brand" href="./index.html" aria-label="홈으로">
+          <span class="brand-mark" aria-hidden="true">DO</span>
+          <span class="brand-text">RUN DO</span>
+        </a>
+
+        <nav class="nav" aria-label="주요 메뉴">
+          <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false">
+            <span class="sr-only">메뉴 열기</span>
+            <span aria-hidden="true">☰</span>
+          </button>
+
+          <ul class="nav-list" data-nav-list>
+            <li><a class="nav-link" href="./index.html">홈</a></li>
+            <li><a class="nav-link" href="./about.html">소개</a></li>
+          </ul>
+        </nav>
+
+        <div class="header-actions">
+          <button class="btn btn-ghost" type="button" data-logout>로그아웃</button>
+        </div>
+      </div>
+    </header>
+
+    <main id="main" class="section">
+      <div class="container prose">
+        <h1>AI 목표 플래너 <span id="planner-today-date" style="font-size: 1.2rem; font-weight: normal; color: var(--brand); margin-left: 0.5rem;"></span></h1>
+        <p class="muted">오늘 달성할 과제를 입력창에 적어보세요. 인공지능이 난이도를 분석하여 동기부여 점수를 할당합니다.</p>
+
+        <form class="form" id="todo-form" style="margin-bottom: 2rem;">
+          <div class="form-row">
+            <label class="label" for="task-input">새로운 할 일</label>
+            <input class="input" id="task-input" placeholder="예시: 수학 문제 10개 풀기, 영어 단어 30개 암기" required />
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" type="submit">AI 분석 및 추가</button>
+          </div>
+        </form>
+
+        <!-- 마라톤 3D 캔버스: 폼 아래, 진행도 바 위 -->
+        <div id="marathon-container"></div>
+
+        <!-- 라이벌(타인) 거리/추월 정보 박스 -->
+        <div id="rival-info" style="margin: 0 0 1.5rem; padding: 0.85rem 1.1rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--panel); display: none;">
+          <div style="display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap;">
+            <span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #ff6b6b; flex-shrink: 0;"></span>
+            <strong id="rival-name" style="color: var(--text);">—</strong>
+            <span class="muted small">와의 거리</span>
+            <span id="rival-status" style="margin-left: auto; font-weight: 700;">—</span>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 3rem;">
+          <h2 style="display: flex; justify-content: space-between; align-items: end; margin-bottom: 1rem;">
+            <span>🚀 나의 성장 진행도</span>
+            <span id="progress-text" class="muted small">0 / 0 점 (목표)</span>
+          </h2>
+          <div style="width: 100%; background: var(--panel); border-radius: 999px; height: 24px; position: relative; border: 1px solid var(--border);">
+            <div id="progress-fill" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--brand), var(--brand2)); border-radius: 999px; transition: width 0.15s linear;"></div>
+            <div id="progress-character" style="position: absolute; top: -12px; left: 0%; transition: left 0.15s linear; font-size: 2.2rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));">🏃</div>
+          </div>
+        </div>
+
+        <h2>오늘의 미션 리스트</h2>
+        <div id="todo-list-container" class="grid" style="grid-template-columns: 1fr; gap: 1rem;">
+          <p class="muted" id="empty-message">등록된 미션이 없습니다. 첫 과제를 추가해 보세요!</p>
+        </div>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <p class="muted small">© <span data-year></span> 오픈소스SW 1조 RUN DO 프로젝트</p>
+        <div class="footer-links">
+          <a class="muted small" href="./index.html">홈</a>
+        </div>
+      </div>
+    </footer>
+
+    <!-- 1) 마라톤 모듈 먼저 로드해서 main.js 에 필요한 함수들을 글로벌 노출 -->
+    <script type="module">
+      import { initMarathon, setMotionState, addRival, updateRival, removeRival } from './marathon.js';
+
+      window.addEventListener('DOMContentLoaded', async () => {
+        const container = document.getElementById('marathon-container');
+        if (!container) return;
+
+        // FastAPI 가 Frontend 폴더를 루트로 서빙하므로 모델은 ./models/
+        await initMarathon(container, { modelsBase: './models/' });
+
+        // main.js 의 loadTodos() / loadRankings() 가 호출할 수 있게 글로벌 노출
+        window.setMotionState = setMotionState;
+        window.addRival = addRival;
+        window.updateRival = updateRival;
+        window.removeRival = removeRival;
+
+        // 페이지 첫 진입 시 idle 보장
+        setMotionState(0);
+      });
+    </script>
+
+    <!-- 2) main.js (IIFE) — 마라톤 모듈 이후에 실행되도록 defer -->
+    <script src="./main.js" defer></script>
+    <!-- 공유 오버레이 -->
+    <div class="drawer-overlay" id="drawer-overlay" aria-hidden="true"></div>
+
+    <!-- 프로필 드로어 (왼쪽) -->
+    <aside class="profile-drawer" id="profile-drawer" aria-label="내 프로필" aria-hidden="true">
+      <div class="drawer-header">
+        <h2 class="drawer-title">👤 내 프로필</h2>
+        <button class="drawer-close-btn" id="profile-drawer-close" aria-label="닫기">✕</button>
+      </div>
+      <div id="profile-content">
+        <p class="muted">불러오는 중...</p>
+      </div>
+      <div id="history-section" class="hidden">
+        <h3>📊 과거 플래너 리포트</h3>
+        <div id="history-list-container">
+            </div>
+      </div>
+    </aside>
+
+    <!-- 랭킹 드로어 토글 버튼 (오른쪽 고정) -->
+    <button class="ranking-toggle-btn" id="ranking-toggle-btn" aria-label="명예의 전당 열기" aria-expanded="false" aria-controls="ranking-drawer">
+      <span class="ranking-toggle-icon">🏆</span>
+      <span class="ranking-toggle-label">랭킹</span>
+    </button>
+
+    <!-- 랭킹 드로어 (오른쪽) -->
+    <aside class="ranking-drawer" id="ranking-drawer" aria-label="명예의 전당" aria-hidden="true">
+      <div class="drawer-header">
+        <div>
+          <h2 class="drawer-title">🏆 명예의 전당</h2>
+          <p id="ranking-today-date" class="muted small" style="margin: 0.2rem 0 0;"></p>
+        </div>
+        <button class="drawer-close-btn" id="ranking-drawer-close" aria-label="닫기">✕</button>
+      </div>
+      <p class="muted small" style="margin: 0 0 1rem;">과제를 완료하여 순위를 높여보세요!</p>
+      <div id="ranking-list-container" class="ranking-list">
+        <p class="muted" style="margin: 0;">랭킹 데이터를 불러오는 중...</p>
+      </div>
+    </aside>
+
+    <script src="./main.js" defer></script>
+    <div id="toast-message"></div>
+  </body>
+</html>

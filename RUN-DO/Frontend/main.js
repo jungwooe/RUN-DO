@@ -437,6 +437,12 @@ async function loadHistory() {
   const PROGRESS_TICK_MS = 100;
   const SPEED_MULTIPLIER = 5; // 진행도 차오르는 속도 배율 (시연용)
 
+  let wasAheadOfRival = false;
+  let wasReachedGoal = false;
+  let tempMotionEndAt = 0;
+  let pendingDanceTrigger = false;
+  let pendingConfettiTrigger = false;
+
   let progressGoal = 0;            // = totalPossibleScore (등록된 모든 미션 AI 점수 합)
   let progressAccumulated = 0;     // 시간으로 차오른 누적 진행도
 
@@ -503,6 +509,8 @@ async function loadHistory() {
     const delta = lastTickTimestamp ? (now - lastTickTimestamp) / 1000 : 0;
     lastTickTimestamp = now;
 
+    let sessionJustEnded = false;
+
     if (activeSessionRemaining > 0) {
       const speed = scoreToSpeed(activeSessionScore) * SPEED_MULTIPLIER;
       const consumed = Math.min(speed * delta, activeSessionRemaining);
@@ -517,14 +525,65 @@ async function loadHistory() {
       // 이번 세션 완료 → 자동 idle
       if (activeSessionRemaining <= 0) {
         activeSessionScore = 0;
-        applyMotion(0);
+        sessionJustEnded = true;
       }
     }
 
-    if (typeof window.setSkyprogress === "function") {
+    const reachedGoal = progressGoal > 0 && progressAccumulated >= progressGoal;
+    if (reachedGoal && !wasReachedGoal) {
+      activeSessionScore = 0;
+      activeSessionRemaining = 0;
+      sessionJustEnded = false;
+      pendingDanceTrigger = false;
+      pendingConfettiTrigger = false;
+
+      if (typeof window.spawnConfetti === "function") {
+            window.spawnConfetti({ x: 0, y: 4, z: 0, count: 250 });
+            setTimeout(() => window.spawnConfetti?.({ x: -2.5, y: 3, z: 0, count: 120 }), 150);
+            setTimeout(() => window.spawnConfetti?.({ x:  2.5, y: 3, z: 0, count: 120 }), 300);
+            setTimeout(() => window.spawnConfetti?.({ x: 0, y: 4, z: 0, count: 200 }), 600);
+        }
+        // 춤 3초
+        if (typeof window.setMotionState === "function") {
+            window.setMotionState(-1);
+            tempMotionEndAt = Date.now() + 3000;
+        }
+    }
+    wasReachedGoal = reachedGoal;
+
+    if (sessionJustEnded) {
+        if (pendingDanceTrigger || pendingConfettiTrigger) {
+            // 폭죽 3연발
+            if (pendingConfettiTrigger && typeof window.spawnConfetti === "function") {
+                window.spawnConfetti({ x: 0,  y: 3,   z: 0, count: 150 });
+                setTimeout(() => window.spawnConfetti?.({ x: -2, y: 2.5, z: 0, count: 80 }), 200);
+                setTimeout(() => window.spawnConfetti?.({ x:  2, y: 2.5, z: 0, count: 80 }), 400);
+            }
+            // 춤 1.5초
+            if (pendingDanceTrigger && typeof window.setMotionState === "function") {
+                window.setMotionState(-1);
+                tempMotionEndAt = Date.now() + 1500;
+            }
+            pendingDanceTrigger = false;
+            pendingConfettiTrigger = false;
+        } else if (tempMotionEndAt === 0) {
+            // 암시 모션 없으면 그냥 idle
+            applyMotion(0);
+        }
+    }
+
+    if (tempMotionEndAt > 0 && Date.now() >= tempMotionEndAt) {
+      tempMotionEndAt = 0;
+      applyMotion(0);
+    }
+
+    if (typeof window.setSkyProgress === "function" && progressGoal > 0) {
       const rate = progressGoal > 0 ? progressAccumulated / progressGoal : 0;
       window.setSkyprogress(rate);
     }
+
+   
+
     renderProgressBar();
     if (currentRival) updateRivalUI(); // 내 진행도가 바뀔 때마다 라이벌 상대 위치도 다시 계산
   };
@@ -557,7 +616,14 @@ async function loadHistory() {
 
   const waitForMarathon = () => new Promise(resolve => {
     if (window.__MTReady) return resolve();
-    window.addEventListener('marathon:ready', resolve, {once: true});
+    const t = setTimeout(() => {
+      console.warn('마라톤 모듈 타임아웃 - 라이벌 미생성');
+      resolve();
+    }, 5000);
+    window.addEventListener('marathon:ready', () => {
+      clearTimeout(t);
+      resolve(); 
+    }, {once: true});
   })
 
   let currentRival = null;             // { nickname, score }
@@ -572,6 +638,7 @@ async function loadHistory() {
       if (typeof window.updateRival === "function") {
         window.updateRival({ visible: false });
       }
+      wasAheadOfRival = false;
       return;
     }
 
@@ -586,6 +653,7 @@ async function loadHistory() {
         window.updateRival({ visible: false });
       }
       if (boxEl) boxEl.style.display = "none";
+      wasAheadOfRival = diff < 0;
       return;
     }
 
@@ -610,7 +678,17 @@ async function loadHistory() {
         statusEl.style.color = "#22c55e";
       }
     }
+
+    const isAhead = diff < 0;
+    if (isAhead&& !wasAheadOfRival) {
+      pendingDanceTrigger = true;
+      pendingConfettiTrigger = true;
+      console.log('추월 감지', { diff, score: currentRival.score, my: progressAccumulated });
+    }
+    wasAheadOfRival = isAhead;
   };
+
+  
 
   // ---------------------------------------------------------
   // [기능 1] 개별 카드 렌더링
@@ -790,6 +868,7 @@ async function loadHistory() {
         if (progressGoal === 0) {
           progressAccumulated = 0;
           cancelMotionSession();
+          wasReachedGoal = false;
         } else if (progressAccumulated > progressGoal) {
           progressAccumulated = progressGoal;
         }
@@ -833,28 +912,51 @@ async function loadHistory() {
         }
 
         if (rivalCandidate) {
-          currentRival = {
-            nickname: rivalCandidate.nickname,
-            score: Number(rivalCandidate.total_score) || 0
-          };
+          const newCharFile = rivalCandidate.character || 'xbotre.fbx';
+          const newScore = Number(rivalCandidate.total_score) || 0;
 
-          await waitForMarathon();
-          // 라이벌 캐릭터를 3D 씬에 추가
-          const initialDiff = currentRival.score - progressAccumulated;
-          const initialZ = initialDiff * RIVAL_Z_SCALE;
+          if (currentRival
+            && currentRival.nickname === rivalCandidate.nickname
+            && currentRival.character === newCharFile) {
+            currentRival.score = newScore;
+            } else {
+              if (currentRival && typeof window.removeRival === "function") {
+                window.removeRival();
+              }
+              wasAheadOfRival = false;
 
-          if (typeof window.addRival === "function") {
-            try {
-              await window.addRival({ x: RIVAL_LANE_X, z: initialZ, color: 0xff6b6b }); // RIVAL_LANE_X, RIVAL_COLOR 직접 적용
-            } catch (e) { console.warn("라이벌 캐릭터 추가 실패:", e); }
-          }
-          updateRivalUI();
+              currentRival = {
+                nickname : rivalCandidate.nickname,
+                character: newCharFile,
+                score: newScore
+              };
+
+              await waitForMarathon();
+
+              const initialDiff = currentRival.score - progressAccumulated;
+              const initialZ = initialDiff * RIVAL_Z_SCALE;
+
+              if (typeof window.addRival === "function") {
+                try {
+                  await window.addRival({
+                    x: RIVAL_LANE_X,
+                    z:initialZ,
+                    color: RIVAL_COLOR,
+                    characterFile: newCharFile
+                  });
+                } catch (e) {console.warn("라이벌 캐릭터 추가 실패", e); }
+              }
+            }
+
+            updateRivalUI();
         } else {
-          // 라이벌 없음 → 정리
           currentRival = null;
+          wasAheadOfRival = false;
           if (typeof window.removeRival === "function") window.removeRival();
           updateRivalUI();
         }
+
+          
 
         if (!result.data || result.data.length === 0) {
           rankingContainer.innerHTML = `<p class="muted" style="margin:0;">아직 랭킹에 등록된 유저가 없습니다.</p>`;
