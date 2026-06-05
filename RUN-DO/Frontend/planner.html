@@ -78,6 +78,14 @@
           </div>
         </form>
 
+        <div style="margin: 0 0 1.5rem; display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap;">
+          <label for="character-select" class="muted small">내 캐릭터:</label>
+          <select id="character-select" class="input" style="width: auto; padding: 0.45rem 0.8rem;">
+            <option value="xbotre.fbx">기본</option>
+            <option value="racer.fbx">레이서</option>
+          </select>
+        </div>
+
         <!-- 마라톤 3D 캔버스: 폼 아래, 진행도 바 위 -->
         <div id="marathon-container"></div>
 
@@ -120,25 +128,40 @@
 
     <!-- 1) 마라톤 모듈 먼저 로드해서 main.js 에 필요한 함수들을 글로벌 노출 -->
     <script type="module">
-      import { initMarathon, setMotionState, addRival, updateRival, removeRival, setSkyProgress } from './marathon.js';
+      import { initMarathon, setMotionState, addRival, updateRival, removeRival, setSkyProgress, spawnConfetti } from './marathon.js';
 
       window.addEventListener('DOMContentLoaded', async () => {
         const container = document.getElementById('marathon-container');
         if (!container) return;
 
+        const savedCharacter = localStorage.getItem('selectedCharacter') || 'xbotre.fbx'
+
         // FastAPI 가 Frontend 폴더를 루트로 서빙하므로 모델은 ./models/
-        await initMarathon(container, { modelsBase: './models/' });
+        await initMarathon(container, { modelsBase: './models/', characterFile: savedCharacter });
 
         // main.js 의 loadTodos() / loadRankings() 가 호출할 수 있게 글로벌 노출
         window.setMotionState = setMotionState; 
-        window.setSkyprogress = setSkyprogress;
+        window.setSkyprogress = setSkyProgress;
         window.addRival = addRival;
         window.updateRival = updateRival;
         window.removeRival = removeRival;
+        window.spawnConfetti = spawnConfetti;
         
 
         // 페이지 첫 진입 시 idle 보장
         setMotionState(0);
+
+        const select = document.getElementById('character-select');
+        if (select) {
+          select.value = savedCharacter;
+          select.addEventListener('change', (e) => {
+            localStorage.setItem('selectedCharacter', e.target.value);
+
+            if (confirm('캐릭터 변경시 새로고침이 필요합니다')) {
+              location.reload();
+            }
+          });
+        }
 
         window.__MTReady = true;
         window.dispatchEvent(new Event('marathon:ready'));

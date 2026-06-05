@@ -13,6 +13,7 @@ let modelsBaseCached = './models/'; // 라이벌 추가 시 재사용
 let sky;                  // 하늘 셰이더 메쉬 (시간대 변화용)
 let particleSystem = null; // 색종이 파티클
 let particleStartTime = 0;
+let rivalSpawnTime = 0;
 const PARTICLE_LIFETIME = 1.5; // 초
 
 // 시간대 색상 키프레임
@@ -59,7 +60,7 @@ let rivalCharacterLoading = false;
 
 let rivalTargetX = null;
 let rivalTargetZ = null;
-const RIVAL_LERP_PER_SEC = 6;
+const RIVAL_LERP_PER_SEC = 30;
 // === 외부에 노출할 API ===
 
 /**
@@ -71,6 +72,7 @@ export async function initMarathon(container, options = {}) {
     containerEl = container;
     const modelsBase = options.modelsBase || '../public/models/';
     modelsBaseCached = modelsBase;
+    const characterFile = options.characterFile || 'xbotre.fbx'
     const enableKeyboard = options.enableKeyboard !== false; // 기본 true
 
     const width = container.clientWidth || window.innerWidth;
@@ -168,18 +170,24 @@ export async function initMarathon(container, options = {}) {
     scene.add(grass);
 
     // 산
-    scene.add(createMountains());
+    
     //scene.add(createClouds());
     scene.add(createTrees());
     scene.add(createDistanceMarkers());
 
     scene.fog = new THREE.FogExp2(0xfff5e1, 0.018);
 
+    scene.add(createFence());
+    scene.add(createGroundDetails());
+    scene.add(createFarForest());
+    scene.add(createSkyline());
+    scene.add(createGrassPatches());
+
     track.receiveShadow = true;
     grass.receiveShadow = true;
 
     // 캐릭터 로드
-    await loadCharacter(modelsBase);
+    await loadCharacter(modelsBase, characterFile);
 
     // 키보드 단축키
     /*if (enableKeyboard) {
@@ -211,9 +219,13 @@ export function setMotionState(achievementRate) {
     } else if (achievementRate > 0 && achievementRate < 0.5) {
         targetSpeed = SPEED.WALK;
         fadeAction('walk');
-    } else if (achievementRate == -1) {
+    } else if (achievementRate === -1) {
         targetSpeed = SPEED.IDLE;
         fadeAction('egg');
+    } else if ( achievementRate === -2) {
+        targetSpeed = SPEED.IDLE;
+        fadeAction('victory');
+
     } else {
         targetSpeed = SPEED.RUN;
         fadeAction('run');
@@ -274,6 +286,8 @@ export async function addRival(options = {}) {
 
         scene.add(obj);
         rivalCharacter = obj;
+        rivalCharacter.visible = false;
+        rivalSpawnTime = Date.now();
 
         // 라이벌 mixer + 애니메이션 로드
         rivalMixer = new THREE.AnimationMixer(rivalCharacter);
@@ -319,7 +333,13 @@ export function updateRival(opts = {}) {
     if (opts.z !== undefined) rivalTargetZ = opts.z;
 
     if (opts.visible !== undefined) {
-        rivalCharacter.visible = !!opts.visible;
+        const inSpawnDelay = Date.now() - rivalSpawnTime < 1000;
+
+        if (inSpawnDelay) {
+            rivalCharacter.visible = false;
+        } else {
+            rivalCharacter.visible = !!opts.visible;
+        }
     }
 
     if (opts.motion) {
@@ -485,7 +505,12 @@ function createClouds() {
 function createTrees() {
   const group = new THREE.Group();
   const trunkMat = new THREE.MeshStandardMaterial({ color: 0x6b4226 });
-  const leavesMat = new THREE.MeshStandardMaterial({ color: 0x3a6b2a });
+  const leavesColor = new THREE.Color().setHSL(
+    0.28 + (Math.random() - 0.5) * 0.06,  // hue 변동
+    0.4 + Math.random() * 0.25,            // saturation
+    0.22 + Math.random() * 0.15             // lightness
+    );
+    const leavesMat = new THREE.MeshStandardMaterial({ color: leavesColor });
   for (let side = -1; side <= 1; side += 2) {
     for (let i = 0; i < 30; i++) {
       const tree = new THREE.Group();
@@ -493,7 +518,7 @@ function createTrees() {
       const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.18 * s, 0.28 * s, 1.4 * s, 6), trunkMat);
       trunk.position.y = 0.7 * s; trunk.castShadow = true; tree.add(trunk);
       const leaves = new THREE.Mesh(new THREE.ConeGeometry(0.9 * s, 2.4 * s, 6 * s), leavesMat);
-      leaves.position.y = 2.6; leaves.castShadow = true; tree.add(leaves);
+      leaves.position.y = 2.0; leaves.castShadow = true; tree.add(leaves);
       tree.position.set(side * (3 + Math.random()*12), 0, -5 + i * 18 + Math.random()*4);
       group.add(tree);
       addScrollObject(tree, -8, 112);
@@ -530,11 +555,190 @@ function createDistanceMarkers() {
   return group;
 }
 
-async function loadCharacter(modelsBase) {
+function createFence() {
+    const group = new THREE.Group();
+    const postMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+    const railMat = new THREE.MeshStandardMaterial({ color: 0xf5f5f5 });
+
+    // 트랙 좌우 양쪽에 펜스 기둥 + 가로 막대
+    for (let side = -1; side <= 1; side += 2) {
+        for (let i = 0; i < 24; i++) {
+            const fenceUnit = new THREE.Group();
+
+            // 기둥 (2개)
+            for (let p = 0; p < 2; p++) {
+                const post = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.08, 0.8, 0.08),
+                    postMat
+                );
+                post.position.set(-0.75 + p * 1.5, 0.4, 0);
+                post.castShadow = true;
+                fenceUnit.add(post);
+            }
+            // 가로 막대 2개
+            for (let r = 0; r < 2; r++) {
+                const rail = new THREE.Mesh(
+                    new THREE.BoxGeometry(1.6, 0.06, 0.04),
+                    railMat
+                );
+                rail.position.set(0, 0.25 + r * 0.35, 0);
+                rail.castShadow = true;
+                fenceUnit.add(rail);
+            }
+
+            fenceUnit.position.set(side * 2.8, 0, -5 + i * 5);
+            group.add(fenceUnit);
+            addScrollObject(fenceUnit, -8, 115);
+        }
+    }
+    return group;
+}
+
+function createGroundDetails() {
+    const group = new THREE.Group();
+    const leavesColor = new THREE.Color().setHSL(
+    0.28 + (Math.random() - 0.5) * 0.06,  // hue 변동
+    0.4 + Math.random() * 0.25,            // saturation
+    0.22 + Math.random() * 0.15             // lightness
+    );
+    const bushMat = new THREE.MeshStandardMaterial({ color: leavesColor });
+    const rockMat = new THREE.MeshStandardMaterial({ color: 0x9a9a9a, flatShading: true });
+
+    // 덤불 30개
+    for (let i = 0; i < 30; i++) {
+        const bush = new THREE.Group();
+        for (let j = 0; j < 3; j++) {
+            const s = new THREE.Mesh(
+                new THREE.SphereGeometry(0.4 + Math.random() * 0.3, 6, 5),
+                bushMat
+            );
+            s.position.set(
+                (Math.random() - 0.5) * 0.6,
+                Math.random() * 0.2,
+                (Math.random() - 0.5) * 0.6
+            );
+            s.castShadow = true;
+            bush.add(s);
+        }
+        const side = Math.random() < 0.5 ? -1 : 1;
+        bush.position.set(
+            side * (4 + Math.random() * 18),
+            0,
+            -10 + Math.random() * 120
+        );
+        bush.scale.setScalar(0.7 + Math.random() * 0.6);
+        group.add(bush);
+        addScrollObject(bush, -12, 115);
+    }
+
+    // 돌 15개
+    for (let i = 0; i < 15; i++) {
+        const rock = new THREE.Mesh(
+            new THREE.DodecahedronGeometry(0.3 + Math.random() * 0.4, 0),
+            rockMat
+        );
+        const side = Math.random() < 0.5 ? -1 : 1;
+        rock.position.set(
+            side * (4 + Math.random() * 16),
+            0.15,
+            -10 + Math.random() * 120
+        );
+        rock.rotation.set(Math.random(), Math.random(), Math.random());
+        rock.castShadow = true;
+        group.add(rock);
+        addScrollObject(rock, -12, 115);
+    }
+    return group;
+}
+
+function createFarForest() {
+    const group = new THREE.Group();
+    const trunkMat  = new THREE.MeshStandardMaterial({ color: 0x4a3219 });
+    const leavesMat = new THREE.MeshStandardMaterial({ color: 0x2f5a25 });
+
+    for (let side = -1; side <= 1; side += 2) {
+        for (let i = 0; i < 30; i++) {
+            const tree = new THREE.Group();
+            const s = 1.2 + Math.random() * 1.5; // 멀리니까 더 크게
+
+            const trunk = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.2 * s, 0.3 * s, 1.5 * s, 6),
+                trunkMat
+            );
+            trunk.position.y = 0.75 * s;
+            tree.add(trunk);
+
+            const leaves = new THREE.Mesh(
+                new THREE.ConeGeometry(1.1 * s, 2.8 * s, 6),
+                leavesMat
+            );
+            leaves.position.y = 2.9 * s;
+            tree.add(leaves);
+
+            tree.position.set(
+                side * (20 + Math.random() * 18),
+                0,
+                -10 + Math.random() * 130
+            );
+            tree.rotation.y = Math.random() * Math.PI * 2;
+            group.add(tree);
+            addScrollObject(tree, -12, 130);
+        }
+    }
+    return group;
+}
+
+function createSkyline() {
+    const group = new THREE.Group();
+    const mat = new THREE.MeshStandardMaterial({ color: 0x5a5d70, flatShading: true });
+
+    for (let i = 0; i < 40; i++) {
+        const h = 4 + Math.random() * 12;
+        const w = 1.5 + Math.random() * 3;
+        const building = new THREE.Mesh(
+            new THREE.BoxGeometry(w, h, w),
+            mat
+        );
+        building.position.set(
+            (Math.random() - 0.5) * 220,
+            h / 2,
+            130 + Math.random() * 10
+        );
+        group.add(building);
+    }
+    return group;
+}
+
+function createGrassPatches() {
+    const group = new THREE.Group();
+    const grassBladeMat = new THREE.MeshStandardMaterial({ color: 0x4f8a3f });
+
+    for (let i = 0; i < 50; i++) {
+        const patch = new THREE.Mesh(
+            new THREE.ConeGeometry(0.06, 0.4, 4),
+            grassBladeMat
+        );
+        const side = Math.random() < 0.5 ? -1 : 1;
+        patch.position.set(
+            side * (3.5 + Math.random() * 15),
+            0.2,
+            -10 + Math.random() * 120
+        );
+        patch.rotation.z = (Math.random() - 0.5) * 0.3;
+        group.add(patch);
+        addScrollObject(patch, -12, 115);
+    }
+    return group;
+}
+
+
+
+
+async function loadCharacter(modelsBase, characterFile = 'xbotre.fbx') {
     const fbxLoader = new FBXLoader();
 
     // 캐릭터 로드
-    character = await fbxLoader.loadAsync(modelsBase + 'xbotre.fbx');
+    character = await fbxLoader.loadAsync(modelsBase + characterFile);
 
     // 크기 조정
     const box = new THREE.Box3().setFromObject(character);
@@ -559,13 +763,21 @@ async function loadCharacter(modelsBase) {
     mixer = new THREE.AnimationMixer(character);
 
     // 애니메이션들 로드해서 같은 mixer에 등록
-    const [idleFbx, walkFbx, runFbx, egg] = await Promise.all([
+    const [idleFbx, walkFbx, runFbx, egg, victoryFbx] = await Promise.all([
         fbxLoader.loadAsync(modelsBase + 'idlenonskin.fbx'),
         fbxLoader.loadAsync(modelsBase + 'walknonskin.fbx'),
         fbxLoader.loadAsync(modelsBase + 'frunnonskin.fbx'),
         fbxLoader.loadAsync(modelsBase + 'egg.fbx'),
+        fbxLoader.loadAsync(modelsBase + 'victory.fbx')
     ]);
 
+    const idleClip = retargetClipToCharacter(idleFbx.animations[0], character);
+    const walkClip = retargetClipToCharacter(walkFbx.animations[0], character);
+    const runClip = retargetClipToCharacter(runFbx.animations[0], character);
+    const eggClip = retargetClipToCharacter(egg.animations[0], character);
+    const victoryClip = retargetClipToCharacter(victoryFbx.animations[0], character);
+
+    
     console.log('=== 캐릭터 본 (처음 10개) ===');
     const bones = [];
     character.traverse(o => { if (o.isBone) bones.push(o.name); });
@@ -579,10 +791,11 @@ async function loadCharacter(modelsBase) {
             idleFbx.animations[0].tracks.slice(0, 5).map(t => t.name));
     }
 
-    actions.idle = mixer.clipAction(idleFbx.animations[0]);
-    actions.walk = mixer.clipAction(walkFbx.animations[0]);
-    actions.run = mixer.clipAction(runFbx.animations[0]);
-    actions.egg = mixer.clipAction(egg.animations[0]);
+    actions.idle = mixer.clipAction(idleClip);
+    actions.walk = mixer.clipAction(walkClip);
+    actions.run = mixer.clipAction(runClip);
+    actions.egg = mixer.clipAction(eggClip);
+    actions.victory = mixer.clipAction(victoryClip);
 
     // 시작은 idle
     actions.idle.play();
@@ -619,6 +832,94 @@ function onResize() {
     renderer.setSize(width, height);
 }
 
+/**
+ * 애니메이션 클립의 트랙 본 이름을 실제 캐릭터의 본 이름에 매칭시킴.
+ * Mixamo 캐릭터간 prefix 차이를 자동으로 보정.
+ */
+function retargetClipToCharacter(clip, character) {
+    // 1) 캐릭터의 본 이름 수집 (정규화된 이름 → 실제 이름)
+    const boneMap = new Map();
+    character.traverse(obj => {
+        if (obj.isBone) {
+            // 모든 prefix 제거: "X_Bot:mixamorig:Hips" → "Hips"
+            const cleanName = obj.name.replace(/^.*?:/, '').replace(/^mixamorig\d*:?/, '');
+            boneMap.set(cleanName, obj.name);
+            // prefix 있는 형태로도 등록
+            boneMap.set(obj.name, obj.name);
+        }
+    });
+
+    // 2) 클립의 각 트랙 이름을 본 이름에 매칭
+    clip.tracks.forEach(track => {
+        const dotIndex = track.name.indexOf('.');
+        if (dotIndex < 0) return;
+        const boneName = track.name.substring(0, dotIndex);
+        const propName = track.name.substring(dotIndex); // ".position" / ".quaternion" / ".scale"
+
+        // 트랙 본 이름도 정규화
+        const cleanName = boneName.replace(/^.*?:/, '').replace(/^mixamorig\d*:?/, '');
+
+        // 캐릭터의 실제 본 이름 찾기
+        const actualBone = boneMap.get(cleanName) || boneMap.get(boneName);
+        if (actualBone) {
+            track.name = actualBone + propName;
+        }
+    });
+
+    return clip;
+}
+
+export function spawnConfetti(opts = {}) {
+    if (!scene) return;
+    const x = opts.x ?? 0;
+    const y = opts.y ?? 2;
+    const z = opts.z ?? 0;
+    const count = opts.count ?? 80;
+
+    const palette = [
+        [1, 0.3, 0.3],     // 빨강
+        [0.3, 0.9, 0.4],   // 초록
+        [0.3, 0.6, 1],     // 파랑
+        [1, 0.9, 0.3],     // 노랑
+        [0.9, 0.4, 1],     // 보라
+        [1, 0.6, 0.2],     // 주황
+        [0.4, 0.95, 0.95], // 시안
+        [1, 0.4, 0.7],     // 핑크
+    ];
+
+    const positions = new Float32Array(count * 3);
+    const colors    = new Float32Array(count * 3);
+    const velocities = new Float32Array(count * 3);
+
+    for (let i = 0; i < count; i++) {
+        positions[i*3]   = x + (Math.random()-0.5)*0.4;
+        positions[i*3+1] = y;
+        positions[i*3+2] = z + (Math.random()-0.5)*0.4;
+        velocities[i*3]   = (Math.random()-0.5)*4;
+        velocities[i*3+1] = 3 + Math.random()*3;
+        velocities[i*3+2] = (Math.random()-0.5)*4;
+        const c = palette[Math.floor(Math.random()*palette.length)];
+        colors[i*3] = c[0]; colors[i*3+1] = c[1]; colors[i*3+2] = c[2];
+    }
+
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geom.setAttribute('color',    new THREE.BufferAttribute(colors, 3));
+    geom.userData.velocities = velocities;
+
+    const mat = new THREE.PointsMaterial({
+        size: 0.18, vertexColors: true, transparent: true, opacity: 1
+    });
+
+    if (particleSystem) {
+        scene.remove(particleSystem);
+        particleSystem.geometry.dispose();
+        particleSystem.material.dispose();
+    }
+    particleSystem = new THREE.Points(geom, mat);
+    scene.add(particleSystem);
+    particleStartTime = clock.getElapsedTime();
+}
 
 
 // 렌더링 루프
@@ -629,7 +930,7 @@ function animate() {
     if (mixer) mixer.update(delta);
     if (rivalMixer) rivalMixer.update(delta);
 
-    if (rivalCharacter && rivalCharacter.visible) {
+    if (rivalCharacter) {
         const t= 1 - Math.exp(-RIVAL_LERP_PER_SEC * delta);
         if (rivalTargetX !== null){
             rivalCharacter.position.x += (rivalTargetX - rivalCharacter.position.x) * t;
@@ -645,6 +946,28 @@ function animate() {
         trackTexture.offset.y -= currentSpeed * delta;
         trackTexture.offset.y = ((trackTexture.offset.y % 1) + 1) % 1;
     }
+
+    if (particleSystem) {
+    const age = clock.getElapsedTime() - particleStartTime;
+    if (age > PARTICLE_LIFETIME) {
+        scene.remove(particleSystem);
+        particleSystem.geometry.dispose();
+        particleSystem.material.dispose();
+        particleSystem = null;
+    } else {
+        const pos = particleSystem.geometry.attributes.position.array;
+        const vel = particleSystem.geometry.userData.velocities;
+        const n = pos.length / 3;
+        for (let i = 0; i < n; i++) {
+            pos[i*3]   += vel[i*3]   * delta;
+            pos[i*3+1] += vel[i*3+1] * delta;
+            pos[i*3+2] += vel[i*3+2] * delta;
+            vel[i*3+1] -= 4 * delta;
+        }
+        particleSystem.geometry.attributes.position.needsUpdate = true;
+        particleSystem.material.opacity = 1 - (age / PARTICLE_LIFETIME);
+    }
+}
 
     updateScrollObjects(delta);
 
